@@ -81,6 +81,24 @@
         <p class="table-subtext">{{ case.ai_explainability_result.explanation_note }}</p>
     </section>
 
+    <section class="case-panel workflow-comparison-panel">
+        <div class="section-heading"><span class="eyebrow">Section 2</span><h3>Baseline vs. Multi-Agent Workflow</h3><p class="section-lead">How the rule-based baseline and the planning-driven multi-agent workflow scored this case, alongside the workflow trace.</p></div>
+        <div class="summary-grid compact-summary">
+            <div class="summary-card"><span>Baseline Risk</span><strong>{{ case.baseline_result.risk_level }}</strong></div>
+            <div class="summary-card"><span>Baseline Score</span><strong>{{ case.baseline_result.risk_score }}</strong></div>
+            <div class="summary-card"><span>Multi-Agent Risk</span><strong>{{ case.multi_agent_result.final_risk_level }}</strong></div>
+            <div class="summary-card"><span>Weighted Score</span><strong>{{ case.multi_agent_result.weighted_score }}/{{ case.multi_agent_result.max_score }}</strong></div>
+        </div>
+        <p>{{ case.baseline_result.explanation }}</p>
+        <p>{{ case.multi_agent_result.explanation }}</p>
+        <h4>Workflow Trace</h4>
+        <ol>
+            {% for step in case.multi_agent_result.workflow_trace %}
+                <li>{{ step }}</li>
+            {% endfor %}
+        </ol>
+    </section>
+
     <section class="case-panel interactive-ai-panel print-hide">
         <div class="section-heading"><span class="eyebrow">Interactive AI Assistant</span><h3>Ask About This Case</h3><p class="section-lead">Ask about the prediction, missing data, generated summary, or baseline comparison.</p></div>
         <div class="ai-status-grid"><div><span>Assistant mode</span><strong>{{ ai_system_status.llm_assistant_mode }}</strong></div><div><span>Scope</span><strong>Review support and explanation</strong></div></div>
@@ -100,7 +118,7 @@
     </section>
 
     <section class="case-panel print-hide review-panel-modern">
-        <div class="section-heading"><span class="eyebrow">Section 2</span><h3>Review Actions</h3><p class="section-lead">Review documentation is stored locally in <code>data/case_reviews.json</code> for prototype traceability.</p></div>
+        <div class="section-heading"><span class="eyebrow">Section 3</span><h3>Review Actions</h3><p class="section-lead">Review documentation is stored locally in <code>data/case_reviews.json</code> for prototype traceability.</p></div>
         <form method="post" class="review-form full-review-form">
             {% if return_to %}<input type="hidden" name="return_to" value="{{ return_to }}">{% endif %}
             <label>Review Status<select name="status">{% for status in review_statuses %}<option value="{{ status }}" {% if case.review_status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
@@ -113,7 +131,7 @@
     </section>
 
     <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Section 3</span><h3>Case Details</h3></div>
+        <div class="section-heading"><span class="eyebrow">Section 4</span><h3>Case Details</h3></div>
         <div class="detail-grid">
             <div><span>Subject ID</span><strong>{{ case.subject_id }}</strong></div><div><span>HADM ID</span><strong>{{ case.hadm_id }}</strong></div><div><span>ICU Stay ID</span><strong>{{ case.icustay_id }}</strong></div><div><span>Age</span><strong>{{ "%.1f"|format(case.age) }}</strong></div><div><span>Gender</span><strong>{{ case.gender }}</strong></div><div><span>Admission Type</span><strong>{{ case.admission_type }}</strong></div>
         </div>
@@ -121,17 +139,16 @@
     </section>
 
     <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Section 4</span><h3>Advanced AI Details</h3><p class="section-lead">These details are generated from real ML/data algorithms and are provided for transparency.</p></div>
+        <div class="section-heading"><span class="eyebrow">Section 5</span><h3>Advanced AI Details</h3><p class="section-lead">These details are generated from real ML/data algorithms and are provided for transparency.</p></div>
         <details class="collapsible-section" open><summary>Similar Cases</summary>{% if case.similar_cases_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Similar cases found</span><strong>{{ case.similar_cases_result.summary.similar_cases_found }}</strong></div><div class="summary-card"><span>Historical mortality label %</span><strong>{{ case.similar_cases_result.summary.mortality_label_percentage if case.similar_cases_result.summary.mortality_label_percentage is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Average age</span><strong>{{ case.similar_cases_result.summary.average_age if case.similar_cases_result.summary.average_age is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Common admission type</span><strong>{{ case.similar_cases_result.summary.common_admission_type }}</strong></div></div><div class="table-container"><table class="worklist-table"><thead><tr><th>ICU Stay</th><th>Subject</th><th>Age</th><th>Admission Type</th><th>Similarity</th><th>Historical label</th></tr></thead><tbody>{% for similar in case.similar_cases_result.cases %}<tr><td>{{ similar.icustay_id }}</td><td>{{ similar.subject_id }}</td><td>{{ similar.age }}</td><td>{{ similar.admission_type }}</td><td>{{ similar.similarity_score }}</td><td>{{ similar.historical_outcome_label if similar.historical_outcome_label is not none else 'Not available' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="notice">{{ case.similar_cases_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Cluster Context</summary>{% if case.cluster_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Cluster ID</span><strong>{{ case.cluster_result.cluster_id }}</strong></div><div class="summary-card"><span>Cases in cluster</span><strong>{{ case.cluster_result.cases_in_cluster }}</strong></div><div class="summary-card"><span>Average AI probability</span><strong>{{ case.cluster_result.average_ai_probability if case.cluster_result.average_ai_probability is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Historical mortality label %</span><strong>{{ case.cluster_result.historical_mortality_label_percentage if case.cluster_result.historical_mortality_label_percentage is not none else 'Not available' }}</strong></div></div><p class="note-text">{{ case.cluster_result.note }}</p>{% else %}<p class="notice">{{ case.cluster_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Anomaly Detection</summary>{% if case.anomaly_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Anomaly label</span><strong>{{ case.anomaly_result.label }}</strong></div><div class="summary-card"><span>Anomaly score</span><strong>{{ case.anomaly_result.anomaly_score }}</strong></div><div class="summary-card"><span>Dataset percentile</span><strong>{{ case.anomaly_result.score_percentile }}</strong></div></div><p class="note-text">{{ case.anomaly_result.explanation }}</p><p class="table-subtext">{{ case.anomaly_result.note }}</p>{% else %}<p class="notice">{{ case.anomaly_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Uncertainty Details</summary>{% if case.uncertainty_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Confidence label</span><strong>{{ case.uncertainty_result.confidence_label }}</strong></div><div class="summary-card"><span>Probability entropy</span><strong>{{ case.uncertainty_result.probability_entropy }}</strong></div><div class="summary-card"><span>Nearest threshold distance</span><strong>{{ case.uncertainty_result.distance_from_nearest_threshold }}</strong></div><div class="summary-card"><span>Missing important features</span><strong>{{ case.uncertainty_result.missing_important_feature_count }}</strong></div></div><p class="warning-box">{{ case.uncertainty_result.data_completeness_warning }}</p><p class="note-text">{{ case.uncertainty_result.explanation }}</p>{% else %}<p class="notice">{{ case.uncertainty_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Explainability Table</summary><div class="table-container"><table><thead><tr><th>Feature</th><th>Value</th><th>Importance</th><th>Interpretation</th></tr></thead><tbody>{% for feature in case.ai_explainability_result.top_features %}<tr><td>{{ feature.display_name }}</td><td>{{ feature.value if feature.value is not none else 'Missing' }}</td><td>{{ feature.importance }}</td><td>{{ feature.interpretation }}</td></tr>{% else %}<tr><td colspan="4">No explainability rows available.</td></tr>{% endfor %}</tbody></table></div></details>
-        <details class="collapsible-section"><summary>Baseline Comparison</summary><div class="summary-grid compact-summary"><div class="summary-card"><span>Baseline Risk</span><strong>{{ case.baseline_result.risk_level }}</strong></div><div class="summary-card"><span>Baseline Score</span><strong>{{ case.baseline_result.risk_score }}</strong></div><div class="summary-card"><span>Multi-Agent Risk</span><strong>{{ case.multi_agent_result.final_risk_level }}</strong></div><div class="summary-card"><span>Weighted Score</span><strong>{{ case.multi_agent_result.weighted_score }}/{{ case.multi_agent_result.max_score }}</strong></div></div><p>{{ case.baseline_result.explanation }}</p><p>{{ case.multi_agent_result.explanation }}</p></details>
     </section>
 
     <section class="case-panel audit-trail-panel">
-        <div class="section-heading"><span class="eyebrow">Section 5</span><h3>Audit Trail</h3><p class="section-lead">This audit trail records local prototype review updates for demonstration and traceability.</p></div>
+        <div class="section-heading"><span class="eyebrow">Section 6</span><h3>Audit Trail</h3><p class="section-lead">This audit trail records local prototype review updates for demonstration and traceability.</p></div>
         {% if case.review_history %}<div class="table-container audit-table-container"><table class="audit-table"><thead><tr><th>Date/time</th><th>Reviewer</th><th>Status</th><th>Priority</th><th>Note</th></tr></thead><tbody>{% for entry in case.review_history|reverse %}<tr><td>{{ entry.updated_at }}</td><td>{{ entry.reviewer if entry.reviewer else 'Not recorded' }}</td><td>{{ entry.status }}</td><td>{{ entry.priority }}</td><td>{{ entry.note if entry.note else 'No note saved.' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="notice">No review history has been saved for this ICU stay yet.</p>{% endif %}
     </section>
 </section>

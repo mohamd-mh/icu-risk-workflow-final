@@ -20,6 +20,7 @@ from sklearn.metrics import (
     accuracy_score,
     confusion_matrix,
     f1_score,
+    precision_recall_curve,
     precision_score,
     recall_score,
     roc_auc_score,
@@ -208,6 +209,54 @@ def evaluate_model(model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series) -> 
     return metrics
 
 
+def select_operating_threshold(y_train: pd.Series, train_probabilities) -> float:
+    """Pick the probability cutoff that maximizes F1 on training predictions.
+
+    class_weight="balanced" shifts the default 0.5 cutoff toward high recall and
+    low precision. precision_recall_curve is used here (on training data, not the
+    test set, to avoid tuning on the data the reported metrics are evaluated on)
+    to find a cutoff that trades some recall back for precision.
+    """
+    precisions, recalls, thresholds = precision_recall_curve(y_train, train_probabilities)
+    precisions, recalls = precisions[:-1], recalls[:-1]
+    f1_scores = [
+        (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+        for precision, recall in zip(precisions, recalls)
+    ]
+    best_index = max(range(len(f1_scores)), key=lambda index: f1_scores[index])
+    return float(thresholds[best_index])
+
+
+def build_tuned_threshold_metrics(
+    model: Pipeline, X_train: pd.DataFrame, y_train: pd.Series, X_test: pd.DataFrame, y_test: pd.Series
+) -> dict | None:
+    classifier = model.named_steps["classifier"]
+    if not hasattr(classifier, "predict_proba") or len(set(y_train)) < 2:
+        return None
+
+    train_probabilities = model.predict_proba(X_train)[:, 1]
+    threshold = select_operating_threshold(y_train, train_probabilities)
+    test_probabilities = model.predict_proba(X_test)[:, 1]
+    tuned_predictions = (test_probabilities >= threshold).astype(int)
+
+    return {
+        "decision_threshold": round(threshold, 4),
+        "selection_method": "F1-maximizing cutoff from precision_recall_curve on training predictions",
+        "accuracy": accuracy_score(y_test, tuned_predictions),
+        "precision": precision_score(y_test, tuned_predictions, zero_division=0),
+        "recall": recall_score(y_test, tuned_predictions, zero_division=0),
+        "f1_score": f1_score(y_test, tuned_predictions, zero_division=0),
+        "confusion_matrix": confusion_matrix(y_test, tuned_predictions).tolist(),
+        "tradeoff_note": (
+            "The default 0.5 cutoff (see 'metrics') favors recall because the classifier "
+            "uses class_weight=\"balanced\" on an imbalanced label. This tuned cutoff was "
+            "chosen to maximize F1 on training predictions and generally raises precision "
+            "at the cost of some recall; compare the two blocks to judge the tradeoff for "
+            "your review workflow."
+        ),
+    }
+
+
 def select_best_model(results: dict[str, dict]) -> str:
     def score(model_name: str) -> tuple[float, float]:
         model_metrics = results[model_name]["metrics"]
@@ -266,6 +315,9 @@ def main() -> None:
                 model.fit(X_train, y_train)
                 results[model_name] = {
                     "metrics": evaluate_model(model, X_test, y_test),
+                    "tuned_threshold_metrics": build_tuned_threshold_metrics(
+                        model, X_train, y_train, X_test, y_test
+                    ),
                     "train_rows": int(len(X_train)),
                     "test_rows": int(len(X_test)),
                 }
@@ -324,6 +376,7 @@ def main() -> None:
                 "excluded_columns": EXCLUDED_COLUMNS,
                 "target_label": TARGET_LABEL,
                 "risk_thresholds": RISK_THRESHOLDS,
+                "tuned_decision_threshold": results[best_model_name].get("tuned_threshold_metrics"),
                 "note": (
                     "hospital_expire_flag is used only as training/evaluation label "
                     "and never as prediction input."

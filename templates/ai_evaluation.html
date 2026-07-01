@@ -33,6 +33,34 @@
         {% if model_metrics.get('confusion_matrix') %}<pre class="command-block">{{ model_metrics.get('confusion_matrix') }}</pre>{% else %}<p class="notice">Not available</p>{% endif %}
     </section>
 
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Calibration</span><h3>Threshold Tuning: Recall vs. Precision Tradeoff</h3></div>
+        {% if tuned_metrics %}
+            <p class="section-lead">
+                The model is trained with <code>class_weight="balanced"</code> to compensate for the
+                imbalanced outcome label, which pushes the default 0.5 probability cutoff toward high
+                recall and low precision. A tuned cutoff was selected separately from training
+                predictions (using <code>precision_recall_curve</code> to find the F1-maximizing
+                threshold), then applied unchanged to the held-out test set below.
+            </p>
+            <div class="summary-grid dashboard-summary-grid">
+                <div class="summary-card metric-card-modern">
+                    <span>Default cutoff (0.5)</span>
+                    <strong>Precision {{ "%.3f"|format(model_metrics.get('precision', 0)) }} / Recall {{ "%.3f"|format(model_metrics.get('recall', 0)) }}</strong>
+                    <p>{{ model_metrics.get('confusion_matrix') }}</p>
+                </div>
+                <div class="summary-card metric-card-modern">
+                    <span>Tuned cutoff ({{ "%.3f"|format(tuned_metrics.decision_threshold) }})</span>
+                    <strong>Precision {{ "%.3f"|format(tuned_metrics.precision) }} / Recall {{ "%.3f"|format(tuned_metrics.recall) }}</strong>
+                    <p>{{ tuned_metrics.confusion_matrix }}</p>
+                </div>
+            </div>
+            <p class="table-subtext">{{ tuned_metrics.tradeoff_note }}</p>
+        {% else %}
+            <p class="notice">Tuned threshold metrics are not available for this model. Re-run ml/train_ai_model.py to generate them.</p>
+        {% endif %}
+    </section>
+
     <section class="case-panel"><div class="section-heading"><span class="eyebrow">Scope</span><h3>Limitations</h3></div><ul><li>Uses the processed academic dataset included with this software.</li><li>The outcome label is used only for training/evaluation, not as prediction input.</li><li>The model supports review priority and transparency, not medical decisions.</li></ul></section>
 </section>
 {% endblock %}

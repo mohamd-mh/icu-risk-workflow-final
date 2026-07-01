@@ -28,7 +28,26 @@
         "roc_auc": 0.8380837912087912
       },
       "test_rows": 250,
-      "train_rows": 750
+      "train_rows": 750,
+      "tuned_threshold_metrics": {
+        "accuracy": 0.804,
+        "confusion_matrix": [
+          [
+            184,
+            40
+          ],
+          [
+            9,
+            17
+          ]
+        ],
+        "decision_threshold": 0.6136,
+        "f1_score": 0.40963855421686746,
+        "precision": 0.2982456140350877,
+        "recall": 0.6538461538461539,
+        "selection_method": "F1-maximizing cutoff from precision_recall_curve on training predictions",
+        "tradeoff_note": "The default 0.5 cutoff (see 'metrics') favors recall because the classifier uses class_weight=\"balanced\" on an imbalanced label. This tuned cutoff was chosen to maximize F1 on training predictions and generally raises precision at the cost of some recall; compare the two blocks to judge the tradeoff for your review workflow."
+      }
     },
     "Random Forest Classifier": {
       "metrics": {
@@ -49,7 +68,26 @@
         "roc_auc": 0.782967032967033
       },
       "test_rows": 250,
-      "train_rows": 750
+      "train_rows": 750,
+      "tuned_threshold_metrics": {
+        "accuracy": 0.896,
+        "confusion_matrix": [
+          [
+            224,
+            0
+          ],
+          [
+            26,
+            0
+          ]
+        ],
+        "decision_threshold": 0.605,
+        "f1_score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selection_method": "F1-maximizing cutoff from precision_recall_curve on training predictions",
+        "tradeoff_note": "The default 0.5 cutoff (see 'metrics') favors recall because the classifier uses class_weight=\"balanced\" on an imbalanced label. This tuned cutoff was chosen to maximize F1 on training predictions and generally raises precision at the cost of some recall; compare the two blocks to judge the tradeoff for your review workflow."
+      }
     }
   },
   "selected_dataset_filename": "patient_features_ai.csv",

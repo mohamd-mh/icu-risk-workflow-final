@@ -67,8 +67,8 @@ def check_data_leakage(patients):
     }
 
 
-def run_evaluation(csv_path="data/patient_features.csv"):
-    """Evaluate baseline and active multi-agent outputs on patient_features.csv."""
+def run_evaluation(csv_path="data/patient_features_ai.csv"):
+    """Evaluate baseline and active multi-agent outputs on patient_features_ai.csv."""
     patients = pd.read_csv(csv_path)
 
     y_true = []

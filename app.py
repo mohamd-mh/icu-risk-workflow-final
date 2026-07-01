@@ -76,6 +76,7 @@ NAV_SECTIONS = [
             {"endpoint": "new_case", "label": "Add New Case"},
             {"endpoint": "icu_cases", "label": "Case Library"},
             {"endpoint": "ai_evaluation", "label": "AI Model Report"},
+            {"endpoint": "results", "label": "Results & Comparison"},
             {"endpoint": "user_guide", "label": "User Guide"},
         ],
     }
@@ -627,6 +628,7 @@ def ai_evaluation():
         metrics=metrics,
         model_name=model_name,
         model_metrics=model_record.get("metrics", {}),
+        tuned_metrics=model_record.get("tuned_threshold_metrics"),
         active_dataset=active_dataset,
     )
 
@@ -757,10 +759,6 @@ def icu_case_ai_assistant(icustay_id):
 @app.route("/multi-agent-workflow")
 @app.route("/ai-methodology")
 @app.route("/stakeholders")
-@app.route("/results")
-@app.route("/technologies")
-@app.route("/team")
-@app.route("/software-system")
 def legacy_documentation_redirect():
     return redirect(url_for("software_home"))
 
