@@ -1,0 +1,36 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} | AI-Assisted ICU Case Review System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="site-title" href="{{ url_for('software_home') }}">
+                <span>AI-Assisted ICU Case Review System</span>
+                <small>Case Review Coordinator</small>
+            </a>
+            <nav>
+                {% for section in nav_sections %}
+                    <div class="nav-section">
+                        <h2>{{ section.label }}</h2>
+                        {% for page in section.pages %}
+                            <a href="{{ url_for(page.endpoint) }}"
+                               class="{% if request.endpoint == page.endpoint %}active{% endif %}">
+                                {{ page.label }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </nav>
+        </aside>
+
+        <main class="content main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

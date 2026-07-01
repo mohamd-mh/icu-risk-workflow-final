@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <h2>Multi-Agent Workflow</h2>
+    <p>
+        The planning-driven multi-agent workflow divides the risk assessment
+        process into smaller roles. It starts from the baseline risk estimate,
+        then checks data quality, calculates a weighted clinical verification
+        score, verifies consistency, explains the result, and records a workflow
+        trace.
+    </p>
+    <h3>Agent Roles</h3>
+    <ul>
+        <li>Planner Agent: decides the steps needed for the patient case.</li>
+        <li>Data Validator Agent: checks missing or unusual feature values.</li>
+        <li>Weighted Risk Assessor Agent: calculates a weighted clinical score.</li>
+        <li>Verifier Agent: checks consistency and uncertainty.</li>
+        <li>Explainer Agent: writes a clear explanation for the result.</li>
+        <li>Trace Agent: records the workflow steps for transparency.</li>
+    </ul>
+    <h3>Connection to LPW and AutoGen</h3>
+    <p>
+        LPW inspired the planning and verification structure. AutoGen inspired
+        the division into specialized agents with clear responsibilities.
+    </p>
+    <p>
+        This is a Software Engineering prototype inspired by those papers, not
+        an operational AutoGen integration or live LLM API system. The main
+        advantage is reliability, transparency, modularity, and traceability.
+    </p>
+</section>
+{% endblock %}

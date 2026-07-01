@@ -1,0 +1,39 @@
+{
+  "excluded_columns": [
+    "hospital_expire_flag",
+    "subject_id",
+    "hadm_id",
+    "icustay_id"
+  ],
+  "input_features": [
+    "gender",
+    "age",
+    "admission_type",
+    "heart_rate_avg",
+    "heart_rate_max",
+    "systolic_bp_avg",
+    "respiratory_rate_avg",
+    "temperature_avg",
+    "spo2_avg",
+    "creatinine_max",
+    "glucose_max",
+    "wbc_max",
+    "hemoglobin_min"
+  ],
+  "label_distribution": {
+    "0": 894,
+    "1": 106
+  },
+  "model_name": "Logistic Regression",
+  "note": "hospital_expire_flag is used only as training/evaluation label and never as prediction input.",
+  "risk_thresholds": {
+    "High": "probability >= 0.67",
+    "Low": "probability < 0.33",
+    "Medium": "0.33 <= probability < 0.67"
+  },
+  "selected_dataset_filename": "patient_features_ai.csv",
+  "selected_dataset_path": "data\\patient_features_ai.csv",
+  "target_label": "hospital_expire_flag",
+  "training_date": "2026-06-23T15:37:16+00:00",
+  "training_row_count": 1000
+}

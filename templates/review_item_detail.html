@@ -1,0 +1,54 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section review-item-page">
+    <div class="page-header page-header-modern">
+        <div><span class="eyebrow">Review Workflow</span><h2>Review Item {{ item.id }}</h2><p>Manage status, priority, assignment, notes, and audit history.</p></div>
+        <a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a>
+    </div>
+
+    <section class="case-panel">
+        <div class="detail-grid">
+            <div><span>Source</span><strong>{{ item.source_type }}</strong></div>
+            <div><span>ICU Stay</span><strong>{{ item.icustay_id or 'Manual case' }}</strong></div>
+            <div><span>AI Risk</span><strong>{{ item.ai_risk_level or 'Not available' }}</strong></div>
+            <div><span>AI Probability</span><strong>{{ item.ai_probability if item.ai_probability is not none else 'Not available' }}</strong></div>
+            <div><span>Data Quality</span><strong>{{ item.data_quality or 'Not available' }}</strong></div>
+            <div><span>Updated</span><strong>{{ item.updated_at }}</strong></div>
+        </div>
+        {% if item.icustay_id %}<a class="button-link" href="{{ url_for('icu_case_detail', icustay_id=item.icustay_id) }}">Open Case Assessment</a>{% endif %}
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Edit Task</span><h3>Status, Priority, Assignment</h3></div>
+        <form method="post" action="{{ url_for('review_item_edit', item_id=item.id) }}" class="review-form full-review-form">
+            <label>Status<select name="status">{% for status in statuses %}<option value="{{ status }}" {% if item.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
+            <label>Priority<select name="priority">{% for priority in priorities %}<option value="{{ priority }}" {% if item.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
+            <label>Assigned Reviewer<input name="assigned_reviewer" value="{{ item.assigned_reviewer }}"></label>
+            <button type="submit">Save Changes</button>
+        </form>
+        <form method="post" action="{{ url_for('review_item_archive', item_id=item.id) }}" class="inline-form"><button type="submit" class="button-link secondary">Archive Item</button></form>
+        <form method="post" action="{{ url_for('review_item_delete', item_id=item.id) }}" class="inline-form"><button type="submit" class="button-link secondary">Delete Request (Archives)</button></form>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Review Notes</span><h3>Add Note</h3></div>
+        <form method="post" action="{{ url_for('review_item_note', item_id=item.id) }}" class="review-form full-review-form">
+            <label>Reviewer Name<input name="reviewer_name" placeholder="Reviewer"></label>
+            <label class="review-note-field">Note<textarea name="note_text" rows="4"></textarea></label>
+            <button type="submit">Add Note</button>
+        </form>
+        <div class="workflow-steps compact-architecture-steps">
+            {% for note in notes %}<span><strong>{{ note.reviewer_name or 'Reviewer' }}</strong><small>{{ note.created_at }} · {{ note.note_text }}</small></span>{% else %}<span><strong>No notes yet</strong></span>{% endfor %}
+        </div>
+    </section>
+
+    <section class="case-panel audit-trail-panel">
+        <div class="section-heading"><span class="eyebrow">Audit Trail</span><h3>Audit Events</h3></div>
+        <div class="workflow-steps compact-architecture-steps">
+            {% for event in audit_events %}<span><strong>{{ event.action }}</strong><small>{{ event.created_at }} · {{ event.details }}</small></span>{% else %}<span><strong>No audit events yet</strong></span>{% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}
+

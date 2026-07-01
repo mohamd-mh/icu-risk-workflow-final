@@ -1,0 +1,67 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section worklist-page">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Case Library</span>
+            <h2>Case Library</h2>
+            <p>Browse the included processed ICU cases, open a case assessment, or add a case to the Review Queue.</p>
+            <p class="page-guidance">Use this page when the Case Review Coordinator needs to find an existing dataset case by risk, data quality, review status, priority, admission type, or identifier.</p>
+        </div>
+        <div class="button-row">
+            <a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a>
+            <a class="button-link secondary" href="{{ url_for('new_case') }}">Add New Case</a>
+        </div>
+    </div>
+
+    <section class="filter-panel filter-panel-modern">
+        <div class="filter-panel-header">
+            <div>
+                <span class="eyebrow">Find Cases</span>
+                <h3>Search and Filters</h3>
+            </div>
+        </div>
+        <form method="get" class="filter-form worklist-filter-form">
+            <label>Risk level<select name="risk_level"><option value="">All</option>{% for risk_level in ["High", "Medium", "Low"] %}<option value="{{ risk_level }}" {% if filters.risk_level == risk_level %}selected{% endif %}>{{ risk_level }}</option>{% endfor %}</select></label>
+            <label>Data quality<select name="data_quality"><option value="">All</option>{% for quality in ["Good", "Partial", "Poor"] %}<option value="{{ quality }}" {% if filters.data_quality == quality %}selected{% endif %}>{{ quality }}</option>{% endfor %}</select></label>
+            <label>Review status<select name="review_status"><option value="">All</option>{% for status in review_statuses %}<option value="{{ status }}" {% if filters.review_status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
+            <label>Priority<select name="priority"><option value="">All</option>{% for priority in priorities %}<option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
+            <label>Admission type<select name="admission_type"><option value="">All</option>{% for admission_type in admission_types %}<option value="{{ admission_type }}" {% if filters.admission_type == admission_type %}selected{% endif %}>{{ admission_type }}</option>{% endfor %}</select></label>
+            <label class="search-field">Search identifiers<input type="search" name="search" value="{{ filters.search }}" placeholder="Subject ID / HADM ID / ICU Stay ID"></label>
+            <div class="filter-actions"><button type="submit">Apply Filters</button><a class="button-link secondary" href="{{ url_for('icu_cases') }}">Clear</a></div>
+        </form>
+    </section>
+
+    <div class="table-container worklist-table-container worklist-card">
+        <table class="worklist-table">
+            <thead>
+                <tr>
+                    <th>Case</th><th>Age</th><th>Gender</th><th>Admission Type</th><th>AI / System Risk</th><th>Main Risk Drivers</th><th>Data Quality</th><th>Review Status</th><th>Priority</th><th class="action-column">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in cases %}
+                    <tr class="{% if case.priority == 'Urgent Review' or case.risk_level == 'High' %}attention-row{% endif %}">
+                        <td><strong>{{ case.case_label }}</strong><span class="table-subtext">Subject {{ case.subject_id }} / HADM {{ case.hadm_id }}</span></td>
+                        <td>{{ "%.1f"|format(case.age) }}</td>
+                        <td>{{ case.gender }}</td>
+                        <td>{{ case.admission_type }}</td>
+                        <td><span class="badge risk-{{ case.risk_level|lower }}">{{ case.risk_level }}</span><span class="table-subtext">Baseline: {{ case.baseline_risk }}</span></td>
+                        <td class="driver-cell"><span>{{ case.main_risk_driver_text }}</span></td>
+                        <td><span class="badge quality-{{ case.data_quality|lower }}">{{ case.data_quality }}</span></td>
+                        <td><span class="badge status status-{{ case.review_status|lower|replace(' ', '-') }}">{{ case.review_status }}</span></td>
+                        <td><span class="badge priority priority-{{ case.priority|lower|replace(' ', '-') }}">{{ case.priority }}</span></td>
+                        <td class="action-column">
+                            <a class="table-action" href="{{ url_for('icu_case_detail', icustay_id=case.icustay_id, return_to=request.full_path) }}">Open Case</a>
+                            <form method="post" action="{{ url_for('add_dataset_case_to_review_queue', icustay_id=case.icustay_id) }}" class="inline-form"><button type="submit" class="table-action">Add to Review Queue</button></form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="10">No cases matched the selected filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

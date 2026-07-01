@@ -1,0 +1,10 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <h2>ICU Stay Not Found</h2>
+    <p>No ICU stay row was found for ICU Stay ID {{ icustay_id }}.</p>
+    <a class="button-link secondary" href="{{ url_for('icu_cases') }}">Back to Case Library</a>
+</section>
+{% endblock %}
+

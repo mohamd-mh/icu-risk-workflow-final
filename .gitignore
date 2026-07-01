@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.env
+*.db
+data/software_system.db
+
+# Never push raw MIMIC files
+CHARTEVENTS.csv
+LABEVENTS.csv
+MIMIC-III/
+mimic-iii/

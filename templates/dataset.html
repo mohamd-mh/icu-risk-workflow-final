@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <span class="eyebrow">Research Website</span>
+    <h2>Dataset</h2>
+    <p>
+        The project uses a real extracted subset of MIMIC-III, a public critical
+        care database. When available, the application and AI training pipeline
+        use <strong>data/patient_features_ai.csv</strong>, an expanded prepared
+        feature file with 1000 ICU stays. If that file is unavailable, the app
+        falls back to <strong>data/patient_features.csv</strong>.
+    </p>
+    <p>
+        Relevant MIMIC-III files for this project include:
+    </p>
+    <ul>
+        <li>PATIENTS.csv</li>
+        <li>ADMISSIONS.csv</li>
+        <li>ICUSTAYS.csv</li>
+        <li>CHARTEVENTS.csv</li>
+        <li>LABEVENTS.csv</li>
+        <li>D_ITEMS.csv</li>
+        <li>D_LABITEMS.csv</li>
+    </ul>
+    <p>
+        CHARTEVENTS.csv is too large to load directly in this simple Flask
+        website. Because of that, preprocessing creates smaller feature files
+        that are easier to display and evaluate.
+    </p>
+    <p>
+        Raw MIMIC-III files are not included in this repository.
+    </p>
+    <h3>Generated Files</h3>
+    <ul>
+        <li><strong>data/patient_features.csv</strong>: current feature file used by the website.</li>
+        <li><strong>data/patient_features_real.csv</strong>: real extracted MIMIC-III feature output.</li>
+        <li><strong>data/feature_availability_report.csv</strong>: feature completeness report.</li>
+    </ul>
+</section>
+{% endblock %}

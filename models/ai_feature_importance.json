@@ -1,0 +1,107 @@
+{
+  "feature_importance": [
+    {
+      "feature": "categorical__admission_type_NEWBORN",
+      "importance": 1.4457704859582194,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "categorical__admission_type_EMERGENCY",
+      "importance": 1.434238654664612,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__heart_rate_max",
+      "importance": 0.6169020528667207,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__age",
+      "importance": 0.5682013137594929,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__respiratory_rate_avg",
+      "importance": 0.5498184696681837,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__systolic_bp_avg",
+      "importance": 0.3954059389480322,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__hemoglobin_min",
+      "importance": 0.23048485610593744,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__heart_rate_avg",
+      "importance": 0.19280568572449372,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__temperature_avg",
+      "importance": 0.1908365835557005,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__glucose_max",
+      "importance": 0.1602117505365486,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "categorical__admission_type_ELECTIVE",
+      "importance": 0.14641309045928944,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "categorical__admission_type_URGENT",
+      "importance": 0.12688256478788323,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__creatinine_max",
+      "importance": 0.12083144577392659,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "categorical__gender_F",
+      "importance": 0.11694347880747735,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "categorical__gender_M",
+      "importance": 0.10894478442968293,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__wbc_max",
+      "importance": 0.04190838399979866,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    },
+    {
+      "feature": "numeric__spo2_avg",
+      "importance": 0.02652599835605136,
+      "importance_type": "absolute_logistic_regression_coefficient",
+      "model_name": "Logistic Regression"
+    }
+  ],
+  "model_name": "Logistic Regression"
+}

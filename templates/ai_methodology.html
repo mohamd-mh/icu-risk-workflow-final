@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Supervised AI Component</span>
+            <h2>AI Methodology</h2>
+            <p>
+                The system now includes a real supervised machine-learning
+                model connected to the ICU case review workflow.
+            </p>
+        </div>
+        <a class="button-link" href="{{ url_for('icu_cases') }}">Open ICU Case Worklist</a>
+    </div>
+
+    <section class="case-panel">
+        <div class="section-heading">
+            <span class="eyebrow">Training Data</span>
+            <h3>Model Training Setup</h3>
+        </div>
+        <div class="ai-status-grid">
+            <div><span>ML model status</span><strong>{{ ai_system_status.model_status }}</strong></div>
+            <div><span>Model name</span><strong>{{ ai_system_status.model_name }}</strong></div>
+            <div><span>Training dataset</span><strong>{{ ai_system_status.training_dataset_file }}</strong></div>
+            <div><span>Training rows</span><strong>{{ ai_system_status.training_rows if ai_system_status.training_rows is not none else "Not available" }}</strong></div>
+            <div><span>Target label</span><strong>{{ ai_system_status.target_label }}</strong></div>
+            <div><span>LLM assistant mode</span><strong>{{ ai_system_status.llm_assistant_mode }}</strong></div>
+        </div>
+        <p>
+            The AI Risk Prediction Agent is trained on
+            <code>{{ ai_system_status.training_dataset_file }}</code>, the
+            selected processed MIMIC-III feature file used by this academic
+            prototype.
+        </p>
+        <div class="detail-grid">
+            <div><span>Target label</span><strong>hospital_expire_flag</strong></div>
+            <div><span>Risk output</span><strong>Predicted probability</strong></div>
+            <div><span>Model artifact</span><strong>models/ai_risk_model.pkl</strong></div>
+        </div>
+        <h4>Label distribution</h4>
+        <div class="route-grid">
+            {% for label, count in ai_system_status.label_distribution.items() %}
+                <code>{{ label }}: {{ count }}</code>
+            {% endfor %}
+        </div>
+        {% if ai_system_status.model_metrics %}
+            <h4>Selected model metrics</h4>
+            <div class="table-container validation-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for metric in ["accuracy", "precision", "recall", "f1_score", "roc_auc"] %}
+                            <tr>
+                                <td>{{ metric }}</td>
+                                {% set metric_value = ai_system_status.model_metrics.get(metric) %}
+                                <td>
+                                    {% if metric_value is not none %}
+                                        {{ "%.3f"|format(metric_value) }}
+                                    {% else %}
+                                        Not available
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading">
+            <span class="eyebrow">Model Inputs</span>
+            <h3>Input Features Used</h3>
+        </div>
+        <div class="route-grid">
+            {% for feature in input_features %}
+                <code>{{ feature }}</code>
+            {% endfor %}
+        </div>
+        <h4>Excluded leakage and identifier columns</h4>
+        <div class="route-grid">
+            {% for column in excluded_columns %}
+                <code>{{ column }}</code>
+            {% endfor %}
+        </div>
+        <p class="note-text">
+            hospital_expire_flag is used only as the training/evaluation label
+            and never as a prediction input.
+        </p>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading">
+            <span class="eyebrow">Risk Levels</span>
+            <h3>How Low, Medium, and High Are Calculated</h3>
+        </div>
+        <p class="note-text">
+            How risk is determined: the trained supervised AI model outputs a
+            probability. The probability is mapped into Low, Medium, or High
+            using transparent configurable thresholds. The feature explanation
+            shows what influenced the model.
+        </p>
+        <div class="workflow-steps compact-architecture-steps">
+            <span><strong>Low</strong><small>Predicted probability &lt; 33%</small></span>
+            <span><strong>Medium</strong><small>Predicted probability 33-67%</small></span>
+            <span><strong>High</strong><small>Predicted probability &gt;= 67%</small></span>
+        </div>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading">
+            <span class="eyebrow">System Components</span>
+            <h3>How The AI Fits With Existing Outputs</h3>
+        </div>
+        <div class="guide-card-grid">
+            <article class="guide-step-card">
+                <span>01</span>
+                <h4>Baseline Rules</h4>
+                <p>Transparent rule-based comparison using predefined feature thresholds.</p>
+            </article>
+            <article class="guide-step-card">
+                <span>02</span>
+                <h4>AI Risk Prediction Agent</h4>
+                <p>Loads the trained supervised model and estimates risk probability for each ICU stay.</p>
+            </article>
+            <article class="guide-step-card">
+                <span>03</span>
+                <h4>Explainable AI Agent</h4>
+                <p>Uses saved feature importance and case values to show the strongest model signals.</p>
+            </article>
+            <article class="guide-step-card">
+                <span>04</span>
+                <h4>Generated Review Summary</h4>
+                <p>Creates a local structured paragraph from probability, risk level, top features, data quality, and baseline comparison.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="case-panel interactive-ai-panel">
+        <div class="section-heading">
+            <span class="eyebrow">Generative Support Layer</span>
+            <h3>Generative AI Assistant</h3>
+        </div>
+        <p>
+            The ICU case assessment page includes an interactive assistant for
+            case review questions. If <code>LLM_API_KEY</code> is configured in
+            the environment, the assistant can call a real external LLM API
+            through the isolated <code>agents/generative_ai_agent.py</code>
+            module.
+        </p>
+        <p>
+            If no API key is configured, the assistant uses an offline fallback
+            that generates structured summaries and explanations from the case
+            data, AI prediction, explainability output, data quality, baseline
+            result, and workflow trace.
+        </p>
+        <p class="note-text">
+            The assistant generates review-support summaries and explanations.
+            It does not make medical decisions and does not provide diagnosis,
+            medication, treatment, or clinical instructions.
+        </p>
+    </section>
+
+    <div class="info-box">
+        This is an academic clinical decision-support prototype for explanation,
+        comparison, and review documentation. It is not a clinical deployment.
+    </div>
+</section>
+{% endblock %}

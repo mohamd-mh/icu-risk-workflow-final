@@ -1,0 +1,11 @@
+feature,available_count,missing_count,available_percent
+heart_rate_avg,949,51,94.9
+heart_rate_max,949,51,94.9
+systolic_bp_avg,824,176,82.4
+respiratory_rate_avg,820,180,82.0
+temperature_avg,809,191,80.9
+spo2_avg,819,181,81.9
+creatinine_max,685,315,68.5
+glucose_max,719,281,71.9
+wbc_max,758,242,75.8
+hemoglobin_min,792,208,79.2

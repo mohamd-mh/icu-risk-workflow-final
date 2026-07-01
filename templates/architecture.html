@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section architecture-page">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Research Website</span>
+            <h2>System Architecture</h2>
+            <p>
+                The prototype uses a prepared ICU feature file as the shared
+                input for the research website, clinical review screens, and
+                evaluation workflow.
+            </p>
+        </div>
+    </div>
+
+    <section class="case-panel architecture-stage-card">
+        <div class="section-heading">
+            <span class="eyebrow">Data To Interface Flow</span>
+            <h3>End-to-End System Pipeline</h3>
+        </div>
+        <div class="architecture-vertical-flow" aria-label="MIMIC CSV files to preprocessing to patient features to Flask web app to workflows to outputs">
+            <div class="architecture-node">
+                <span>Source Data</span>
+                <strong>MIMIC-III CSV files</strong>
+            </div>
+            <div class="architecture-arrow-down">Next</div>
+            <div class="architecture-node">
+                <span>Feature Builder</span>
+                <strong>preprocessing/build_features.py</strong>
+            </div>
+            <div class="architecture-arrow-down">Next</div>
+            <div class="architecture-node">
+                <span>Prepared Input</span>
+                <strong>data/patient_features.csv</strong>
+            </div>
+            <div class="architecture-arrow-down">Next</div>
+            <div class="architecture-node architecture-node-app">
+                <span>Application Layer</span>
+                <strong>Flask Web App</strong>
+            </div>
+            <div class="architecture-arrow-down">Next</div>
+            <div class="architecture-split-node">
+                <div>
+                    <span>A. Baseline</span>
+                    <strong>Baseline Pipeline</strong>
+                </div>
+                <div>
+                    <span>B. Planning Workflow</span>
+                    <strong>Multi-Agent Workflow</strong>
+                </div>
+            </div>
+            <div class="architecture-arrow-down">Next</div>
+            <div class="architecture-output-node">
+                <span>Outputs</span>
+                <strong>Dashboard / Assessment / Results</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading">
+            <span class="eyebrow">Comparison Layer</span>
+            <h3>Two Workflow Paths</h3>
+        </div>
+        <div class="architecture-workflows">
+            <article class="workflow-card architecture-card">
+                <span class="card-kicker">A. Baseline Pipeline</span>
+                <h3>Rule-Based Baseline</h3>
+                <div class="workflow-steps compact-architecture-steps">
+                    <span>Unweighted rule scoring</span>
+                    <span>Low / Medium / High risk output</span>
+                    <span>Basic explanation</span>
+                </div>
+            </article>
+
+            <article class="workflow-card architecture-card">
+                <span class="card-kicker">B. Planning-Driven Multi-Agent Workflow</span>
+                <h3>Planned Review Workflow</h3>
+                <div class="workflow-steps compact-architecture-steps">
+                    <span>Planner</span>
+                    <span>Data Validator</span>
+                    <span>Baseline Risk Assessor</span>
+                    <span>Weighted Clinical Verifier</span>
+                    <span>Verifier</span>
+                    <span>Explainer</span>
+                    <span>Trace Agent</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading">
+            <span class="eyebrow">User-Facing Outputs</span>
+            <h3>Application Pages</h3>
+        </div>
+        <div class="architecture-outputs">
+            <div class="metric-card">
+                <span>Output 01</span>
+                <strong>Demo</strong>
+                <p>Single-case comparison view for baseline and multi-agent outputs.</p>
+            </div>
+            <div class="metric-card">
+                <span>Output 02</span>
+                <strong>ICU Dashboard / Worklist / Assessment</strong>
+                <p>Clinical review interface for browsing, prioritizing, opening, and documenting ICU stay reviews.</p>
+            </div>
+            <div class="metric-card">
+                <span>Output 03</span>
+                <strong>Results & Validation</strong>
+                <p>Evaluation metrics, feature completeness, route checks, and submission support pages.</p>
+            </div>
+        </div>
+    </section>
+</section>
+{% endblock %}

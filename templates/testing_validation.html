@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section validation-page">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Research Website</span>
+            <h2>Testing & Validation</h2>
+            <p>
+                Software engineering checks, validation artifacts, evaluation
+                summaries, and run instructions for the academic prototype.
+            </p>
+        </div>
+        <a class="button-link secondary" href="{{ url_for('icu_dashboard') }}">Back to Dashboard</a>
+    </div>
+
+    <div class="validation-card-grid">
+        <section class="case-panel validation-card validation-card-modern">
+            <div class="section-heading">
+                <span class="eyebrow">System Check</span>
+                <h3>Compile Checks</h3>
+            </div>
+            <pre class="command-block">.venv\Scripts\python.exe -m py_compile app.py baseline/baseline_pipeline.py agents/multi_agent_workflow.py evaluation/evaluate.py evaluation/metrics.py</pre>
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern">
+            <div class="section-heading">
+                <span class="eyebrow">System Check</span>
+                <h3>Route Checks</h3>
+            </div>
+            <div class="route-grid">
+                {% for route in ["/", "/icu-dashboard", "/icu-cases", "/user-guide", "/testing-validation", "/demo", "/results", "/system-architecture", "/dataset", "/team"] %}
+                    <code>{{ route }}</code>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern">
+            <div class="section-heading">
+                <span class="eyebrow">Feature File</span>
+                <h3>Active Patient Feature Dataset</h3>
+            </div>
+            <div class="detail-grid compact-detail-grid">
+                <div><span>Active file</span><strong>{{ active_feature_dataset.path }}</strong></div>
+                <div><span>Rows loaded by app</span><strong>{{ active_feature_dataset.row_count }}</strong></div>
+            </div>
+            {% if active_feature_dataset.filename == "patient_features_ai.csv" and active_feature_dataset.row_count == 1000 %}
+                <p class="success-box">Expanded AI feature file is available and the app is using 1000 rows.</p>
+            {% elif active_feature_dataset.filename == "patient_features_ai.csv" %}
+                <p class="warning-box">Expanded AI feature file is active, but row count is {{ active_feature_dataset.row_count }}.</p>
+            {% else %}
+                <p class="warning-box">Expanded AI feature file was not found. The app is using the fallback feature file.</p>
+            {% endif %}
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern validation-card-wide">
+            <div class="section-heading">
+                <span class="eyebrow">Data Check</span>
+                <h3>Data Validation</h3>
+            </div>
+            {% if feature_availability %}
+                <div class="table-container validation-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Available Count</th>
+                                <th>Missing Count</th>
+                                <th>Available Percent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in feature_availability %}
+                                <tr>
+                                    <td>{{ row.feature }}</td>
+                                    <td>{{ row.available_count }}</td>
+                                    <td>{{ row.missing_count }}</td>
+                                    <td>{{ "%.1f"|format(row.available_percent) }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="notice">Feature availability report was not found. The app can still run with the existing patient feature file.</p>
+            {% endif %}
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern validation-card-wide">
+            <div class="section-heading">
+                <span class="eyebrow">Evaluation Check</span>
+                <h3>Evaluation Summary</h3>
+            </div>
+            {% if evaluation_results %}
+                {% for section_key, section_label in [("high_risk_detection", "High-risk Detection Results"), ("at_risk_detection", "At-risk Detection Results")] %}
+                    {% set section = evaluation_results[section_key] %}
+                    <h4>{{ section_label }}</h4>
+                    <div class="table-container validation-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Baseline</th>
+                                    <th>Multi-Agent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for metric in ["accuracy", "precision", "recall", "f1"] %}
+                                    <tr>
+                                        <td>{{ metric|capitalize }}</td>
+                                        <td>{{ "%.2f"|format(section.baseline[metric]) }}</td>
+                                        <td>{{ "%.2f"|format(section.multi_agent[metric]) }}</td>
+                                    </tr>
+                                {% endfor %}
+                                {% for metric, label in [("true_positive", "True Positive"), ("false_positive", "False Positive"), ("true_negative", "True Negative"), ("false_negative", "False Negative")] %}
+                                    <tr>
+                                        <td>{{ label }}</td>
+                                        <td>{{ section.baseline.confusion_matrix[metric] }}</td>
+                                        <td>{{ section.multi_agent.confusion_matrix[metric] }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+                {% if evaluation_results.summary %}
+                    <p class="note-text">{{ evaluation_results.summary }}</p>
+                {% endif %}
+            {% else %}
+                <p class="notice">Evaluation results file was not found. Run the evaluation workflow to regenerate it.</p>
+            {% endif %}
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern">
+            <div class="section-heading">
+                <span class="eyebrow">Review Storage</span>
+                <h3>Local Review Documentation</h3>
+            </div>
+            <p>
+                Local review data is stored in <code>{{ review_storage_path }}</code>
+                as local JSON storage for prototype traceability.
+            </p>
+            <ul>
+                <li>Review status</li>
+                <li>Priority</li>
+                <li>Reviewer note</li>
+                <li>Review history / audit trail</li>
+            </ul>
+            <p>
+                These saved review fields do not change risk scoring or
+                evaluation formulas.
+            </p>
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern">
+            <div class="section-heading">
+                <span class="eyebrow">Integrity Check</span>
+                <h3>Data Leakage Check</h3>
+            </div>
+            <p class="info-box">
+                hospital_expire_flag is used only for evaluation and is not used
+                as an input feature for risk scoring.
+            </p>
+        </section>
+
+        <section class="case-panel validation-card validation-card-modern">
+            <div class="section-heading">
+                <span class="eyebrow">Submission</span>
+                <h3>GitHub / Run Instructions</h3>
+            </div>
+            <p>
+                GitHub repository:
+                <a href="https://github.com/mohamd-mh/icu-risk-workflow">https://github.com/mohamd-mh/icu-risk-workflow</a>
+            </p>
+            <ul>
+                <li>The repository is private for academic submission.</li>
+                <li>Raw MIMIC-III files are not included.</li>
+            </ul>
+            <pre class="command-block">python -m venv .venv
+source .venv/Scripts/activate
+pip install -r requirements.txt
+python app.py</pre>
+            <p>
+                Open <a href="http://127.0.0.1:5000/">http://127.0.0.1:5000</a>
+                after the Flask server starts.
+            </p>
+        </section>
+    </div>
+</section>
+{% endblock %}

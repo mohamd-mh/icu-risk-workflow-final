@@ -1,0 +1,38 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section ai-evaluation-page">
+    <div class="page-header page-header-modern">
+        <div><span class="eyebrow">AI Model Report</span><h2>AI Model Report</h2><p>Plain-language report for the trained model and saved test metrics.</p></div>
+        <a class="button-link secondary" href="{{ url_for('software_home') }}">Home</a>
+    </div>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Model</span><h3>Training Information</h3></div>
+        <div class="detail-grid">
+            <div><span>Model name</span><strong>{{ model_name }}</strong></div>
+            <div><span>Dataset</span><strong>{{ metadata.get('selected_dataset_filename', active_dataset.filename) }}</strong></div>
+            <div><span>Rows</span><strong>{{ metadata.get('training_row_count', active_dataset.row_count) }}</strong></div>
+            <div><span>Target label</span><strong>{{ metadata.get('target_label', 'hospital_expire_flag') }}</strong></div>
+            <div><span>Status</span><strong>{{ ai_system_status.model_status }}</strong></div>
+            <div><span>Live Generative AI</span><strong>{{ ai_system_status.generative_ai_status }}</strong></div>
+        </div>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Metrics</span><h3>What the Metrics Mean</h3></div>
+        <div class="summary-grid dashboard-summary-grid">
+            <div class="summary-card metric-card-modern"><span>Accuracy</span><strong>{{ model_metrics.get('accuracy', 'Not available') }}</strong><p>Overall correct predictions.</p></div>
+            <div class="summary-card metric-card-modern"><span>Precision</span><strong>{{ model_metrics.get('precision', 'Not available') }}</strong><p>How many flagged cases were truly positive in the test set.</p></div>
+            <div class="summary-card metric-card-modern"><span>Recall</span><strong>{{ model_metrics.get('recall', 'Not available') }}</strong><p>How many true positive cases were caught.</p></div>
+            <div class="summary-card metric-card-modern"><span>F1</span><strong>{{ model_metrics.get('f1_score', 'Not available') }}</strong><p>Balance between precision and recall.</p></div>
+            <div class="summary-card metric-card-modern"><span>ROC-AUC</span><strong>{{ model_metrics.get('roc_auc', 'Not available') }}</strong><p>Ranking ability.</p></div>
+            <div class="summary-card metric-card-modern"><span>Brier score</span><strong>{{ model_metrics.get('brier_score', 'Not available') }}</strong><p>Calibration score if available.</p></div>
+        </div>
+        <h4>Confusion Matrix</h4>
+        {% if model_metrics.get('confusion_matrix') %}<pre class="command-block">{{ model_metrics.get('confusion_matrix') }}</pre>{% else %}<p class="notice">Not available</p>{% endif %}
+    </section>
+
+    <section class="case-panel"><div class="section-heading"><span class="eyebrow">Scope</span><h3>Limitations</h3></div><ul><li>Uses the processed academic dataset included with this software.</li><li>The outcome label is used only for training/evaluation, not as prediction input.</li><li>The model supports review priority and transparency, not medical decisions.</li></ul></section>
+</section>
+{% endblock %}

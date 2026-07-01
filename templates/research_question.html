@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <span class="eyebrow">Research Website</span>
+    <h2>Research Question</h2>
+    <p>
+        How does a planning-driven multi-agent LLM workflow, inspired by LPW and
+        AutoGen, affect the accuracy, reliability, and transparency of early ICU
+        risk prediction on a real extracted subset of MIMIC-III compared with a
+        baseline single-pipeline approach?
+    </p>
+    <h3>Independent Variable</h3>
+    <p>
+        The independent variable is the workflow type. The project compares a
+        baseline pipeline with a planning-driven multi-agent workflow.
+    </p>
+    <h3>Dependent Variables</h3>
+    <ul>
+        <li>Accuracy: how well the system estimates the ICU stay risk level.</li>
+        <li>Reliability: how well the system handles missing or unusual data.</li>
+        <li>Transparency: how clearly the system explains its result and process.</li>
+    </ul>
+    <h3>Expected Output</h3>
+    <ul>
+        <li>Risk level: low, medium, or high.</li>
+        <li>Explanation: a short reason for the risk result.</li>
+        <li>Workflow trace: a record of the steps used to reach the result.</li>
+    </ul>
+</section>
+{% endblock %}

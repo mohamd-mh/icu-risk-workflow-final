@@ -1,0 +1,46 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section review-queue-page">
+    <div class="page-header page-header-modern">
+        <div><span class="eyebrow">Main Work Page</span><h2>Review Queue</h2><p>Cases waiting for review, follow-up, or documentation.</p></div>
+        <a class="button-link large-button" href="{{ url_for('new_case') }}">Add New Case</a>
+    </div>
+
+    {% if created == "1" %}<div class="success-box">Case added to the review queue.</div>{% elif created == "0" %}<div class="info-box">This case is already active in the queue. <a href="{{ url_for('review_item_detail', item_id=existing_id) }}">Open it</a>.</div>{% endif %}
+
+    <section class="filter-panel filter-panel-modern">
+        <form method="get" class="filter-form worklist-filter-form">
+            <label>Status<select name="status"><option value="">All</option>{% for status in statuses %}<option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
+            <label>Priority<select name="priority"><option value="">All</option>{% for priority in priorities %}<option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
+            <label>Risk<select name="ai_risk_level"><option value="">All</option>{% for risk in ['High','Medium','Low'] %}<option value="{{ risk }}" {% if filters.ai_risk_level == risk %}selected{% endif %}>{{ risk }}</option>{% endfor %}</select></label>
+            <label class="search-field">Search<input type="search" name="search" value="{{ filters.search }}" placeholder="Case ID or reviewer"></label>
+            <div class="filter-actions"><button type="submit">Apply Filters</button><a class="button-link secondary" href="{{ url_for('review_queue') }}">Clear</a></div>
+        </form>
+    </section>
+
+    <div class="table-container worklist-table-container worklist-card">
+        <table class="worklist-table">
+            <thead><tr><th>Case</th><th>Risk</th><th>Priority</th><th>Status</th><th>Reviewer</th><th>Last Updated</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{% if item.icustay_id %}ICU {{ item.icustay_id }}{% else %}Manual {{ item.manual_case_id }}{% endif %}</td>
+                    <td><span class="badge risk-{{ item.ai_risk_level|lower if item.ai_risk_level else 'low' }}">{{ item.ai_risk_level or 'Not available' }}</span></td>
+                    <td><span class="badge priority priority-{{ item.priority|lower }}">{{ item.priority }}</span></td>
+                    <td><span class="badge status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span></td>
+                    <td>{{ item.assigned_reviewer or 'Unassigned' }}</td>
+                    <td>{{ item.updated_at }}</td>
+                    <td class="action-column">
+                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}">Open</a>
+                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#edit">Edit</a>
+                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Add Note</a>
+                        <form method="post" action="{{ url_for('review_item_archive', item_id=item.id) }}" class="inline-form"><button type="submit" class="table-action">Archive</button></form>
+                    </td>
+                </tr>
+            {% else %}<tr><td colspan="7">No cases match the current filters.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

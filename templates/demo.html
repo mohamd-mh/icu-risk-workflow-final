@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section demo-page">
+    <nav class="system-breadcrumb print-hide" aria-label="System workflow">
+        <a href="{{ url_for('icu_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('icu_cases') }}">Worklist</a>
+        {% if from_case %}
+            <a href="{{ url_for('icu_case_detail', icustay_id=from_case) }}">Assessment</a>
+        {% else %}
+            <span>Assessment</span>
+        {% endif %}
+        <span class="active">Demo</span>
+    </nav>
+
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Software System Artifact</span>
+            <h2>Demo</h2>
+            <p>
+                Select an ICU stay ID to view the matching row from the real
+                extracted MIMIC-III ICU stay feature file.
+            </p>
+        </div>
+        {% if from_case %}
+            <a class="button-link secondary" href="{{ url_for('icu_case_detail', icustay_id=from_case) }}">Back to ICU Assessment</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="demo-form">
+        <label for="icustay_id">ICU Stay ID</label>
+        <select id="icustay_id" name="icustay_id" onchange="this.form.submit()">
+            {% for icustay_id in icustay_ids %}
+                <option value="{{ icustay_id }}" {% if icustay_id == selected_id %}selected{% endif %}>
+                    {{ icustay_id }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if from_case %}
+            <input type="hidden" name="from_case" value="{{ from_case }}">
+        {% endif %}
+        <button type="submit">Show ICU Stay</button>
+    </form>
+
+    {% if selected_patient %}
+        <div class="table-container demo-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for name, value in selected_patient.items() %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td>
+                                {% if value != value or value|string|lower == "nan" %}
+                                    Missing
+                                {% elif name in ["subject_id", "hadm_id", "icustay_id"] %}
+                                    {{ value|int }}
+                                {% elif value is number %}
+                                    {% if value == value|int %}
+                                        {{ value|int }}
+                                    {% else %}
+                                        {{ "%.2f"|format(value) }}
+                                    {% endif %}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if baseline_result %}
+            <div class="result-box">
+                <h3>Baseline Pipeline Result</h3>
+                <p><strong>Risk Level:</strong> {{ baseline_result.risk_level }}</p>
+                <p><strong>Risk Score:</strong> {{ baseline_result.risk_score }}</p>
+
+                <h4>Contributing Factors</h4>
+                {% if baseline_result.contributing_factors %}
+                    <ul>
+                        {% for factor in baseline_result.contributing_factors %}
+                            <li>{{ factor }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No abnormal rule factors were found.</p>
+                {% endif %}
+
+                <p><strong>Basic Explanation:</strong> {{ baseline_result.explanation }}</p>
+            </div>
+        {% endif %}
+
+        {% if multi_agent_result %}
+            <div class="result-box">
+                <h3>Planning-Driven Multi-Agent Workflow Result</h3>
+                <p><strong>Initial Baseline Risk:</strong> {{ multi_agent_result.initial_baseline_risk_level }}</p>
+                <p><strong>Baseline Risk Score:</strong> {{ multi_agent_result.baseline_risk_score }}</p>
+                <p><strong>Final Risk Level:</strong> {{ multi_agent_result.final_risk_level }}</p>
+                <p><strong>Weighted Score:</strong> {{ multi_agent_result.weighted_score }}/{{ multi_agent_result.max_score }}</p>
+                <p><strong>Data Quality:</strong> {{ multi_agent_result.data_quality }}</p>
+                <p><strong>Validation Summary:</strong> {{ multi_agent_result.validation_summary }}</p>
+                <p><strong>Verification Status:</strong> {{ multi_agent_result.verification_status }}</p>
+
+                <h4>Verification Notes</h4>
+                <ul>
+                    {% for note in multi_agent_result.verification_notes %}
+                        <li>{{ note }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h4>Contributing Factors with Weights</h4>
+                {% if multi_agent_result.contributing_factors %}
+                    <ul>
+                        {% for factor in multi_agent_result.contributing_factors %}
+                            <li>{{ factor }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No abnormal rule factors were found.</p>
+                {% endif %}
+
+                <p><strong>Explanation:</strong> {{ multi_agent_result.explanation }}</p>
+
+                <h4>Workflow Trace</h4>
+                <ol>
+                    {% for step in multi_agent_result.workflow_trace %}
+                        <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        {% endif %}
+    {% else %}
+        <p class="notice">No ICU stay row was found for the selected ICU stay ID.</p>
+    {% endif %}
+</section>
+{% endblock %}

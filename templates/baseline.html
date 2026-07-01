@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <h2>Baseline Pipeline</h2>
+    <p>
+        The baseline pipeline is a simple single-pipeline unweighted rule-based
+        workflow. It uses one direct path from ICU stay features to a risk
+        result and a basic explanation.
+    </p>
+    <div class="simple-flow">
+        <span>Patient features</span>
+        <span>Risk calculation</span>
+        <span>Low / medium / high risk</span>
+        <span>Basic explanation</span>
+    </div>
+    <p>
+        This approach is useful as a comparison point because it is simple and
+        easy to understand. It is compared with the planning-driven multi-agent
+        workflow in the Results & Comparison page.
+    </p>
+    <p>
+        The baseline uses threshold rules for age, admission type, vital signs,
+        oxygen saturation, and lab values. Each abnormal condition adds one risk
+        point, so the method stays easy to inspect.
+    </p>
+</section>
+{% endblock %}

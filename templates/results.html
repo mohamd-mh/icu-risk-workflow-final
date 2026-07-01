@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <span class="eyebrow">Research Website</span>
+    <h2>Results & Comparison</h2>
+    <p>
+        This evaluation uses the prepared ICU stay feature files for the
+        academic prototype. The AI model now prefers
+        <strong>patient_features_ai.csv</strong> when available, while the
+        existing research evaluation artifacts remain available for comparison.
+    </p>
+    <p>
+        Because the system outputs Low/Medium/High risk while the dataset label
+        is binary hospital mortality, we report two interpretations. High-risk
+        detection treats only High as positive. At-risk detection treats both
+        Medium and High as positive.
+    </p>
+
+    <h3>High-Risk Mortality Detection</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Baseline Pipeline</th>
+                    <th>Multi-Agent Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Accuracy</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.accuracy) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.accuracy) }}</td>
+                </tr>
+                <tr>
+                    <td>Precision</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.precision) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.precision) }}</td>
+                </tr>
+                <tr>
+                    <td>Recall</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.recall) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.recall) }}</td>
+                </tr>
+                <tr>
+                    <td>F1-score</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.f1) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.f1) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>High-Risk Confusion Matrix</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Baseline Pipeline</th>
+                    <th>Multi-Agent Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>True Positive</td>
+                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.true_positive }}</td>
+                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.true_positive }}</td>
+                </tr>
+                <tr>
+                    <td>False Positive</td>
+                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.false_positive }}</td>
+                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.false_positive }}</td>
+                </tr>
+                <tr>
+                    <td>True Negative</td>
+                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.true_negative }}</td>
+                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.true_negative }}</td>
+                </tr>
+                <tr>
+                    <td>False Negative</td>
+                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.false_negative }}</td>
+                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.false_negative }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>At-Risk Detection</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Baseline Pipeline</th>
+                    <th>Multi-Agent Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Accuracy</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.accuracy) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.accuracy) }}</td>
+                </tr>
+                <tr>
+                    <td>Precision</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.precision) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.precision) }}</td>
+                </tr>
+                <tr>
+                    <td>Recall</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.recall) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.recall) }}</td>
+                </tr>
+                <tr>
+                    <td>F1-score</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.f1) }}</td>
+                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.f1) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>At-Risk Confusion Matrix</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Baseline Pipeline</th>
+                    <th>Multi-Agent Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>True Positive</td>
+                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.true_positive }}</td>
+                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.true_positive }}</td>
+                </tr>
+                <tr>
+                    <td>False Positive</td>
+                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.false_positive }}</td>
+                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.false_positive }}</td>
+                </tr>
+                <tr>
+                    <td>True Negative</td>
+                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.true_negative }}</td>
+                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.true_negative }}</td>
+                </tr>
+                <tr>
+                    <td>False Negative</td>
+                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.false_negative }}</td>
+                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.false_negative }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Dataset Balance</h3>
+    <p>
+        Total rows: {{ evaluation_result.class_distribution.total_rows }}.
+        Survived: {{ evaluation_result.class_distribution.survived_count }}.
+        Died: {{ evaluation_result.class_distribution.died_count }}.
+        Mortality rate: {{ "%.2f"|format(evaluation_result.class_distribution.mortality_rate * 100) }}%.
+    </p>
+    <p>
+        The extracted subset is imbalanced, so accuracy alone is not enough.
+        Precision, recall, F1-score, and the confusion matrix give more context.
+    </p>
+    <p>
+        Data leakage check: {{ evaluation_result.data_leakage.leakage_check }}
+        (issues: {{ evaluation_result.data_leakage.leakage_issues_count }}).
+    </p>
+
+    <h3>Reliability Comparison</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Baseline Pipeline</th>
+                    <th>Multi-Agent Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Missing value handling</td>
+                    <td>Basic missing value handling</td>
+                    <td>Data quality Good/Partial/Poor</td>
+                </tr>
+                <tr>
+                    <td>Validator</td>
+                    <td>No separate validator</td>
+                    <td>Validator Agent</td>
+                </tr>
+                <tr>
+                    <td>Verifier</td>
+                    <td>No verifier</td>
+                    <td>Verifier Agent</td>
+                </tr>
+                <tr>
+                    <td>Workflow trace</td>
+                    <td>No workflow trace</td>
+                    <td>Workflow trace</td>
+                </tr>
+                <tr>
+                    <td>Uncertainty warnings</td>
+                    <td>No separate uncertainty warning</td>
+                    <td>Uncertainty warnings</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Transparency Comparison</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Baseline Pipeline</th>
+                    <th>Multi-Agent Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Explanation</td>
+                    <td>Basic explanation</td>
+                    <td>Explanation</td>
+                </tr>
+                <tr>
+                    <td>Contributing factors</td>
+                    <td>Contributing factors</td>
+                    <td>Weighted contributing factors</td>
+                </tr>
+                <tr>
+                    <td>Validation summary</td>
+                    <td>No validation summary</td>
+                    <td>Validation summary</td>
+                </tr>
+                <tr>
+                    <td>Verification notes</td>
+                    <td>No verification notes</td>
+                    <td>Verification notes</td>
+                </tr>
+                <tr>
+                    <td>Workflow trace</td>
+                    <td>No workflow trace</td>
+                    <td>Workflow trace</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>
+        The baseline is a simple unweighted pipeline. The multi-agent workflow
+        extends it with planning, data validation, weighted verification,
+        explanation, and workflow trace. In this prototype it does not
+        significantly improve predictive accuracy, but it provides comparable
+        predictive performance with better reliability, transparency,
+        explainability, modularity, and traceability.
+    </p>
+</section>
+{% endblock %}

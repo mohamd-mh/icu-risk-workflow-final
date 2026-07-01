@@ -1,0 +1,54 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section software-system-page">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Home</span>
+            <h2>AI-Assisted ICU Case Review System</h2>
+            <p>
+                This system helps a Case Review Coordinator decide which ICU
+                cases to review first, understand why the model marked a case
+                as important, track review progress, and keep notes with audit
+                history.
+            </p>
+        </div>
+    </div>
+
+    <div class="summary-grid dashboard-summary-grid">
+        <article class="metric-card feature-tile">
+            <span class="tile-icon">QUEUE</span>
+            <strong>Review Queue</strong>
+            <p>See what needs review, update status and priority, assign a reviewer, add notes, and archive local records.</p>
+            <a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a>
+        </article>
+        <article class="metric-card feature-tile">
+            <span class="tile-icon">ADD</span>
+            <strong>Add New Case</strong>
+            <p>Enter case values and run AI review support before adding the case to the queue.</p>
+            <a class="button-link" href="{{ url_for('new_case') }}">Add New Case</a>
+        </article>
+        <article class="metric-card feature-tile">
+            <span class="tile-icon">LIB</span>
+            <strong>Case Library</strong>
+            <p>Browse the included processed ICU cases and add selected cases to the review queue.</p>
+            <a class="button-link" href="{{ url_for('icu_cases') }}">Open Case Library</a>
+        </article>
+    </div>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Real AI in the background</span><h3>How the system supports review</h3></div>
+        <div class="workflow-steps compact-architecture-steps">
+            <span><strong>Risk prediction</strong><small>Trained supervised ML model</small></span>
+            <span><strong>Explanation</strong><small>Feature importance and case values</small></span>
+            <span><strong>Similar cases</strong><small>KNN retrieval from the processed dataset</small></span>
+            <span><strong>Anomaly / uncertainty check</strong><small>IsolationForest and computed confidence</small></span>
+        </div>
+    </section>
+
+    <div class="info-box">
+        This academic prototype supports case review and documentation only. It
+        does not provide diagnosis, medication, or treatment recommendations.
+    </div>
+</section>
+{% endblock %}

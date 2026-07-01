@@ -1,0 +1,118 @@
+{
+  "high_risk_detection": {
+    "baseline": {
+      "accuracy": 0.85,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "confusion_matrix": {
+        "true_positive": 5,
+        "false_positive": 10,
+        "true_negative": 80,
+        "false_negative": 5
+      }
+    },
+    "multi_agent": {
+      "accuracy": 0.84,
+      "precision": 0.3125,
+      "recall": 0.5,
+      "f1": 0.38461538461538464,
+      "confusion_matrix": {
+        "true_positive": 5,
+        "false_positive": 11,
+        "true_negative": 79,
+        "false_negative": 5
+      }
+    }
+  },
+  "at_risk_detection": {
+    "baseline": {
+      "accuracy": 0.74,
+      "precision": 0.25,
+      "recall": 0.8,
+      "f1": 0.38095238095238093,
+      "confusion_matrix": {
+        "true_positive": 8,
+        "false_positive": 24,
+        "true_negative": 66,
+        "false_negative": 2
+      }
+    },
+    "multi_agent": {
+      "accuracy": 0.74,
+      "precision": 0.25,
+      "recall": 0.8,
+      "f1": 0.38095238095238093,
+      "confusion_matrix": {
+        "true_positive": 8,
+        "false_positive": 24,
+        "true_negative": 66,
+        "false_negative": 2
+      }
+    }
+  },
+  "baseline_metrics": {
+    "accuracy": 0.85,
+    "precision": 0.3333333333333333,
+    "recall": 0.5,
+    "f1": 0.4,
+    "confusion_matrix": {
+      "true_positive": 5,
+      "false_positive": 10,
+      "true_negative": 80,
+      "false_negative": 5
+    }
+  },
+  "multi_agent_metrics": {
+    "accuracy": 0.84,
+    "precision": 0.3125,
+    "recall": 0.5,
+    "f1": 0.38461538461538464,
+    "confusion_matrix": {
+      "true_positive": 5,
+      "false_positive": 11,
+      "true_negative": 79,
+      "false_negative": 5
+    }
+  },
+  "class_distribution": {
+    "total_rows": 100,
+    "survived_count": 90,
+    "died_count": 10,
+    "mortality_rate": 0.1
+  },
+  "data_leakage": {
+    "leakage_check": "Passed",
+    "leakage_issues_count": 0
+  },
+  "reliability_comparison": {
+    "baseline": {
+      "missing_data_handling": "Basic missing value handling",
+      "validator": "No separate validator",
+      "verifier": "No verifier",
+      "workflow_trace": "No workflow trace"
+    },
+    "multi_agent": {
+      "data_quality": "Data quality Good/Partial/Poor",
+      "validator": "Validator Agent",
+      "verifier": "Verifier Agent",
+      "workflow_trace": "Workflow trace",
+      "uncertainty_warnings": "Uncertainty warnings"
+    }
+  },
+  "transparency_comparison": {
+    "baseline": {
+      "explanation": "Basic",
+      "contributing_factors": "Contributing factors",
+      "workflow_trace": "No workflow trace"
+    },
+    "multi_agent": {
+      "weighted_factors": "Weighted contributing factors",
+      "explanation": "Explanation",
+      "validation_summary": "Validation summary",
+      "verification_notes": "Verification notes",
+      "workflow_trace": "Workflow trace"
+    }
+  },
+  "summary": "The multi-agent workflow mainly improves reliability and transparency. Its accuracy depends on the risk-threshold configuration and should be interpreted together with precision, recall, F1-score, and the confusion matrix."
+}

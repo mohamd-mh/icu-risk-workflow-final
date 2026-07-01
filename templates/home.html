@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section home-page modern-home">
+    <div class="hero-card hero-card-modern">
+        <div>
+            <span class="eyebrow">Research Website</span>
+            <h2>ICU Risk Workflow</h2>
+            <p class="hero-summary">
+                This website presents the research and project documentation
+                for the ICU Risk Workflow. The actual software system is
+                available under the Software System tab.
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a class="button-link large-button" href="{{ url_for('software_home') }}">Open Software System</a>
+            <a class="button-link secondary large-button" href="{{ url_for('software_system') }}">Software System Page</a>
+        </div>
+    </div>
+
+    <section class="home-section deliverable-structure">
+        <div class="section-heading">
+            <span class="eyebrow">Final Deliverable</span>
+            <h3>Project Deliverable Structure</h3>
+        </div>
+    </section>
+
+    <div class="home-path-grid">
+        <div class="home-path feature-card research-card portal-card">
+            <div>
+                <div class="card-icon">RQ</div>
+                <span class="card-kicker">Project explanation and academic context</span>
+                <h3>Research Website</h3>
+                <p>
+                    This section presents the research question, supporting
+                    articles, dataset, architecture, baseline and multi-agent
+                    workflow, results, technologies, and team.
+                </p>
+            </div>
+            <div class="portal-link-grid">
+                <a class="button-link secondary" href="{{ url_for('research_question') }}">Research Question</a>
+                <a class="button-link secondary" href="{{ url_for('articles') }}">Articles</a>
+                <a class="button-link secondary" href="{{ url_for('dataset') }}">Dataset</a>
+                <a class="button-link secondary" href="{{ url_for('ai_methodology') }}">AI Methodology</a>
+                <a class="button-link secondary" href="{{ url_for('stakeholders') }}">Stakeholders</a>
+                <a class="button-link secondary" href="{{ url_for('architecture') }}">System Architecture</a>
+                <a class="button-link secondary" href="{{ url_for('results') }}">Results &amp; Comparison</a>
+                <a class="button-link secondary" href="{{ url_for('testing_validation') }}">Testing &amp; Validation</a>
+                <a class="button-link secondary" href="{{ url_for('team') }}">Team</a>
+                <a class="button-link secondary" href="{{ url_for('software_system') }}">Software System</a>
+            </div>
+        </div>
+        <div class="home-path feature-card clinical-card portal-card artifact-portal-card">
+            <div>
+                <div class="card-icon">ICU</div>
+                <span class="card-kicker">Runnable ICU case review system</span>
+                <h3>Software System Artifact</h3>
+                <p>
+                    The actual software system is grouped separately in the
+                    sidebar. It contains the dashboard, worklist, case
+                    assessment, AI assistant, review documentation, and audit
+                    trail.
+                </p>
+            </div>
+            <div class="portal-link-grid">
+                <a class="button-link" href="{{ url_for('software_home') }}">Software Home</a>
+                <a class="button-link" href="{{ url_for('icu_dashboard') }}">ICU Dashboard</a>
+                <a class="button-link" href="{{ url_for('icu_cases') }}">ICU Case Worklist</a>
+                <a class="button-link" href="{{ url_for('user_guide') }}">User Guide</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-box project-explanation-box">
+        The Research Website explains the question, articles, dataset, AI
+        methodology, stakeholders, architecture, evaluation, validation, and
+        team. The Software System tab opens the runnable ICU Risk Review
+        software.
+    </div>
+
+    <div class="download-run-callout">
+        <div>
+            <span class="eyebrow">Download / Run</span>
+            <p>
+                Run locally from the private GitHub repository using the
+                instructions in Testing &amp; Validation.
+            </p>
+        </div>
+        <a class="button-link" href="{{ url_for('testing_validation') }}">Testing &amp; Validation</a>
+    </div>
+
+    <section class="home-section">
+        <div class="section-heading">
+            <span class="eyebrow">Software System Artifact</span>
+            <h3>What the system lets users do</h3>
+        </div>
+        <div class="summary-grid metric-grid home-feature-grid">
+            <div class="metric-card feature-tile">
+                <span class="tile-icon">ICU</span>
+                <strong>Browse ICU cases</strong>
+                <p>Move from dashboard overview into a searchable worklist of extracted ICU stay records.</p>
+            </div>
+            <div class="metric-card feature-tile">
+                <span class="tile-icon">HIGH</span>
+                <strong>Prioritize high-risk stays</strong>
+                <p>Use risk level, data quality, review status, and local priority to organize review work.</p>
+            </div>
+            <div class="metric-card feature-tile">
+                <span class="tile-icon">VIEW</span>
+                <strong>Open assessment</strong>
+                <p>Compare baseline and multi-agent outputs, risk drivers, validation notes, and workflow trace.</p>
+            </div>
+            <div class="metric-card feature-tile">
+                <span class="tile-icon">NOTE</span>
+                <strong>Save review notes</strong>
+                <p>Save local status, priority, reviewer initials, and notes without changing prediction logic.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-section">
+        <div class="section-heading">
+            <span class="eyebrow">Project Structure</span>
+            <h3>Software Engineering Artifact</h3>
+        </div>
+        <div class="workflow-steps artifact-grid">
+            <span><strong>Modular architecture</strong><small>Separated web, baseline, workflow, and evaluation modules</small></span>
+            <span><strong>Data pipeline</strong><small>Prepared feature file used consistently across pages</small></span>
+            <span><strong>Baseline workflow</strong><small>Rule-based comparison path for research evaluation</small></span>
+            <span><strong>Multi-agent workflow</strong><small>Planning, validation, verification, explanation, and trace</small></span>
+            <span><strong>Evaluation/testing</strong><small>Metrics, route checks, compile checks, and validation artifacts</small></span>
+            <span><strong>User interface</strong><small>Dashboard, worklist, assessment screen, and local review documentation</small></span>
+        </div>
+    </section>
+
+    <div class="info-box">
+        This system is an academic decision-support prototype. It supports
+        review and explanation, but does not replace clinical judgment.
+    </div>
+</section>
+{% endblock %}

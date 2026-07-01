@@ -1,0 +1,60 @@
+{
+  "best_model": "Logistic Regression",
+  "class_distribution": {
+    "0": 894,
+    "1": 106
+  },
+  "label_distribution": {
+    "0": 894,
+    "1": 106
+  },
+  "models": {
+    "Logistic Regression": {
+      "metrics": {
+        "accuracy": 0.732,
+        "confusion_matrix": [
+          [
+            161,
+            63
+          ],
+          [
+            4,
+            22
+          ]
+        ],
+        "f1_score": 0.3963963963963964,
+        "precision": 0.25882352941176473,
+        "recall": 0.8461538461538461,
+        "roc_auc": 0.8380837912087912
+      },
+      "test_rows": 250,
+      "train_rows": 750
+    },
+    "Random Forest Classifier": {
+      "metrics": {
+        "accuracy": 0.896,
+        "confusion_matrix": [
+          [
+            223,
+            1
+          ],
+          [
+            25,
+            1
+          ]
+        ],
+        "f1_score": 0.07142857142857142,
+        "precision": 0.5,
+        "recall": 0.038461538461538464,
+        "roc_auc": 0.782967032967033
+      },
+      "test_rows": 250,
+      "train_rows": 750
+    }
+  },
+  "selected_dataset_filename": "patient_features_ai.csv",
+  "selected_dataset_path": "data\\patient_features_ai.csv",
+  "target_label": "hospital_expire_flag",
+  "training_row_count": 1000,
+  "warnings": []
+}

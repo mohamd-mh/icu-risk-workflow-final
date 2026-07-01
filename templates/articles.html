@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section">
+    <span class="eyebrow">Research Website</span>
+    <h2>Articles</h2>
+    <p>
+        These articles help explain the project idea of using planning and
+        multiple agents to make a workflow more transparent.
+    </p>
+    <div class="team-list">
+        <div>
+            <h3>Planning-Driven Programming: A Large Language Model Programming Workflow</h3>
+            <p>
+                <strong>Main idea:</strong> LPW shows how a task can be broken
+                into planned steps before the final answer or program is created.
+            </p>
+            <p>
+                <strong>Connection to our project:</strong> Our multi-agent
+                workflow can first plan the risk assessment process, then assign
+                clear steps to agents such as validation, risk assessment, and
+                explanation.
+            </p>
+        </div>
+        <div>
+            <h3>AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation</h3>
+            <p>
+                <strong>Main idea:</strong> AutoGen presents a way for multiple
+                agents to work together through structured conversation.
+            </p>
+            <p>
+                <strong>Connection to our project:</strong> Our project uses the
+                same idea at a simple level: different agents can check data,
+                estimate risk, verify the result, and create an explanation.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

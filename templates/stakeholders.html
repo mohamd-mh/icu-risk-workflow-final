@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-section wide-section">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Information System Context</span>
+            <h2>Stakeholders</h2>
+            <p>
+                The ICU Risk Workflow supports several direct and indirect
+                stakeholders in an academic clinical information-system
+                prototype.
+            </p>
+        </div>
+        <a class="button-link secondary" href="{{ url_for('ai_methodology') }}">AI Methodology</a>
+    </div>
+
+    <div class="stakeholder-grid">
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Clinical Reviewer</span>
+            <h3>Clinical Reviewer</h3>
+            <p><strong>Role:</strong> Reviews ICU stay summaries and documents local review status.</p>
+            <p><strong>Need:</strong> Clear risk outputs, explanations, measurements, and audit trail.</p>
+            <p><strong>User story:</strong> As a clinical reviewer, I want to compare baseline, multi-agent, and AI outputs so that I can document a structured case review.</p>
+        </article>
+
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Shift Workflow</span>
+            <h3>ICU Nurse / Shift Reviewer</h3>
+            <p><strong>Role:</strong> Uses the worklist to scan ICU stays during a shift review workflow.</p>
+            <p><strong>Need:</strong> A readable dashboard, filters, and priority indicators.</p>
+            <p><strong>User story:</strong> As a shift reviewer, I want to filter cases by risk and data quality so that I can focus review attention efficiently.</p>
+        </article>
+
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Operations</span>
+            <h3>Department Manager</h3>
+            <p><strong>Role:</strong> Monitors review volume, follow-up status, and workflow coverage.</p>
+            <p><strong>Need:</strong> Aggregate counts, queue visibility, and review status summaries.</p>
+            <p><strong>User story:</strong> As a department manager, I want a dashboard view so that I can understand review workload and unresolved follow-up items.</p>
+        </article>
+
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Analysis</span>
+            <h3>Data Analyst / Researcher</h3>
+            <p><strong>Role:</strong> Evaluates model behavior, metrics, feature availability, and comparison outputs.</p>
+            <p><strong>Need:</strong> Model methodology, evaluation results, and transparent feature handling.</p>
+            <p><strong>User story:</strong> As a researcher, I want to inspect model metrics and input features so that I can evaluate the prototype design.</p>
+        </article>
+
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Administration</span>
+            <h3>System Administrator</h3>
+            <p><strong>Role:</strong> Runs the Flask app locally and checks project files and generated artifacts.</p>
+            <p><strong>Need:</strong> Clear run instructions, local JSON storage, and validation checks.</p>
+            <p><strong>User story:</strong> As a system administrator, I want documented routes and storage files so that I can run and verify the prototype.</p>
+        </article>
+
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Academic Review</span>
+            <h3>Academic Evaluator</h3>
+            <p><strong>Role:</strong> Reviews whether the project works as a research website and software artifact.</p>
+            <p><strong>Need:</strong> Clear navigation, methodology, stakeholder context, and working pages.</p>
+            <p><strong>User story:</strong> As an academic evaluator, I want to see the research explanation and runnable system so that I can assess the final deliverable.</p>
+        </article>
+
+        <article class="case-panel stakeholder-card">
+            <span class="eyebrow">Indirect Stakeholder</span>
+            <h3>Indirect Patient Stakeholder</h3>
+            <p><strong>Role:</strong> Represents the people whose de-identified ICU records motivate safer information-system design.</p>
+            <p><strong>Need:</strong> Responsible data use, clear limitations, and no direct clinical claims.</p>
+            <p><strong>User story:</strong> As an indirect patient stakeholder, I want the prototype to use de-identified data responsibly so that academic review does not overstate clinical use.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}
