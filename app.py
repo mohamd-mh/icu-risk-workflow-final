@@ -69,10 +69,10 @@ REVIEW_PRIORITIES = ["Normal", "Watch", "Urgent Review"]
 
 NAV_SECTIONS = [
     {
-        "label": "AI-Assisted ICU Case Review System",
+        "label": "AI-Assisted ICU Quality Review System",
         "pages": [
             {"endpoint": "software_home", "label": "Home"},
-            {"endpoint": "review_queue", "label": "Review Queue"},
+            {"endpoint": "review_queue", "label": "Quality Review Queue"},
             {"endpoint": "new_case", "label": "Add New Case"},
             {"endpoint": "icu_cases", "label": "Case Library"},
             {"endpoint": "ai_evaluation", "label": "AI Model Report"},
@@ -269,6 +269,15 @@ def format_risk_drivers(drivers):
     return "; ".join(drivers)
 
 
+def format_model_signals(top_features, limit=3):
+    """Present explainability features as model signals, not medical rules."""
+    labels = []
+    for feature in top_features[:limit]:
+        name = str(feature.get("display_name", "feature")).strip().lower()
+        labels.append("Model signal: admission context" if "admission" in name else f"Model signal: {name} feature")
+    return "; ".join(labels) or "No model signals available"
+
+
 def get_review_focus_items(case):
     factor_text = " ".join(case["main_risk_drivers"]).lower()
     items = []
@@ -354,6 +363,7 @@ def build_case_assessment(patient, reviews, include_deep_analytics=False):
     multi_agent_result = run_workflow(patient)
     ai_prediction_result = predict_ai_risk(patient)
     ai_explainability_result = explain_ai_prediction(patient)
+    top_features = ai_explainability_result.get("top_features", [])
     icustay_id = str(int(patient["icustay_id"]))
     review = get_case_review(icustay_id, reviews)
     main_risk_drivers = get_top_risk_drivers(baseline_result, multi_agent_result)
@@ -376,6 +386,7 @@ def build_case_assessment(patient, reviews, include_deep_analytics=False):
         "data_quality": multi_agent_result["data_quality"],
         "main_risk_drivers": main_risk_drivers,
         "main_risk_driver_text": format_risk_drivers(main_risk_drivers),
+        "main_model_signal_text": format_model_signals(top_features),
         "review_status": review["status"],
         "priority": review["priority"],
         "reviewer": review["reviewer"],
@@ -549,7 +560,8 @@ def add_dataset_case_to_review_queue(icustay_id):
 
 @app.route("/review-queue")
 def review_queue():
-    filters = {"status": request.args.get("status", ""), "priority": request.args.get("priority", ""), "ai_risk_level": request.args.get("ai_risk_level", ""), "search": request.args.get("search", "")}
+    status_filter = request.args.get("status")
+    filters = {"status": "__active__" if status_filter is None else status_filter, "priority": request.args.get("priority", ""), "ai_risk_level": request.args.get("ai_risk_level", ""), "search": request.args.get("search", "")}
     return render_template("review_queue.html", title="Review Queue", items=list_review_items(filters), filters=filters, statuses=WORKFLOW_STATUSES, priorities=WORKFLOW_PRIORITIES, audit_events=get_audit_events(limit=15), created=request.args.get("created"), existing_id=request.args.get("existing_id"))
 
 

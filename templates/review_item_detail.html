@@ -3,11 +3,12 @@
 {% block content %}
 <section class="page-section wide-section review-item-page">
     <div class="page-header page-header-modern">
-        <div><span class="eyebrow">Review Workflow</span><h2>Review Item {{ item.id }}</h2><p>Manage status, priority, assignment, notes, and audit history.</p></div>
+        <div><span class="eyebrow">Coordinator Workflow</span><h2>Review Item {{ item.id }}</h2><p>The ICU Quality &amp; Patient Safety Coordinator manages review priority, status, follow-up, documentation, notes, and audit history here.</p></div>
         <a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a>
     </div>
 
-    <section class="case-panel">
+    <section class="case-panel review-workflow-card" id="edit">
+        <div class="section-heading"><span class="eyebrow">Summary</span><h3>Review Item Summary</h3></div>
         <div class="detail-grid">
             <div><span>Source</span><strong>{{ item.source_type }}</strong></div>
             <div><span>ICU Stay</span><strong>{{ item.icustay_id or 'Manual case' }}</strong></div>
@@ -19,22 +20,21 @@
         {% if item.icustay_id %}<a class="button-link" href="{{ url_for('icu_case_detail', icustay_id=item.icustay_id) }}">Open Case Assessment</a>{% endif %}
     </section>
 
-    <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Edit Task</span><h3>Status, Priority, Assignment</h3></div>
+    <section class="case-panel review-workflow-card" id="note">
+        <div class="section-heading"><span class="eyebrow">Workflow</span><h3>Update Status, Priority, and Coordinator</h3></div>
         <form method="post" action="{{ url_for('review_item_edit', item_id=item.id) }}" class="review-form full-review-form">
             <label>Status<select name="status">{% for status in statuses %}<option value="{{ status }}" {% if item.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
-            <label>Priority<select name="priority">{% for priority in priorities %}<option value="{{ priority }}" {% if item.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
-            <label>Assigned Reviewer<input name="assigned_reviewer" value="{{ item.assigned_reviewer }}"></label>
+            <label>Review Priority<select name="priority">{% for priority in priorities %}<option value="{{ priority }}" {% if item.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
+            <label>Coordinator<input name="assigned_reviewer" value="{{ item.assigned_reviewer }}"></label>
             <button type="submit">Save Changes</button>
         </form>
-        <form method="post" action="{{ url_for('review_item_archive', item_id=item.id) }}" class="inline-form"><button type="submit" class="button-link secondary">Archive Item</button></form>
-        <form method="post" action="{{ url_for('review_item_delete', item_id=item.id) }}" class="inline-form"><button type="submit" class="button-link secondary">Delete Request (Archives)</button></form>
+        <div class="secondary-actions"><form method="post" action="{{ url_for('review_item_archive', item_id=item.id) }}" class="inline-form"><button type="submit" class="button-link secondary subtle-action">Archive Item</button></form><form method="post" action="{{ url_for('review_item_delete', item_id=item.id) }}" class="inline-form"><button type="submit" class="button-link secondary subtle-action">Delete Request (Archives)</button></form></div>
     </section>
 
-    <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Review Notes</span><h3>Add Note</h3></div>
+    <section class="case-panel review-workflow-card">
+        <div class="section-heading"><span class="eyebrow">Documentation</span><h3>Add Review Note</h3></div>
         <form method="post" action="{{ url_for('review_item_note', item_id=item.id) }}" class="review-form full-review-form">
-            <label>Reviewer Name<input name="reviewer_name" placeholder="Reviewer"></label>
+            <label>Coordinator Name<input name="reviewer_name" placeholder="Coordinator"></label>
             <label class="review-note-field">Note<textarea name="note_text" rows="4"></textarea></label>
             <button type="submit">Add Note</button>
         </form>

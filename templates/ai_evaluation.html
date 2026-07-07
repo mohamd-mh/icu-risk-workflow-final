@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-section wide-section ai-evaluation-page">
     <div class="page-header page-header-modern">
-        <div><span class="eyebrow">AI Model Report</span><h2>AI Model Report</h2><p>Plain-language report for the trained model and saved test metrics.</p></div>
+        <div><span class="eyebrow">AI Model Report</span><h2>AI Model Report</h2><p>This report helps the ICU Quality &amp; Patient Safety Coordinator and project evaluator understand how the AI model was trained, which features it uses, and how reliable its outputs are for review support.</p></div>
         <a class="button-link secondary" href="{{ url_for('software_home') }}">Home</a>
     </div>
 
@@ -20,14 +20,52 @@
     </section>
 
     <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Data</span><h3>Data Processing Transparency</h3></div>
+        <p>We do not manually decide that a specific value means a patient is high risk. The trained ML model learns statistical patterns from the processed dataset. Its outputs support ICU quality review only, not clinical decision-making.</p>
+        <div class="detail-grid">
+            <div><span>Dataset file</span><strong>{{ metadata.get('selected_dataset_filename', 'patient_features_ai.csv') }}</strong></div>
+            <div><span>Row count</span><strong>{{ metadata.get('training_row_count', active_dataset.row_count) }}</strong></div>
+            <div><span>Feature time window</span><strong>{{ metadata.get('feature_time_window', 'Not recorded in model metadata') }}</strong></div>
+            <div><span>Target label</span><strong>{{ metadata.get('target_label', 'hospital_expire_flag') }}</strong></div>
+            <div><span>Model type</span><strong>{{ model_name }}</strong></div>
+            <div><span>Risk thresholds</span><strong>Low &lt; 33%, Medium 33&ndash;67%, High &gt;= 67%</strong></div>
+        </div>
+        <p><strong>Excluded leakage/identifier columns:</strong> {{ metadata.get('excluded_columns', ['subject_id', 'hadm_id', 'icustay_id', 'hospital_expire_flag'])|join(', ') }}.</p>
+        <p><strong>Missing-data handling:</strong> numeric inputs use median imputation; categorical inputs use the most-frequent value and one-hot encoding in the saved preprocessing/model pipeline.</p>
+        {% if tuned_metrics %}<p><strong>Threshold tuning available:</strong> {{ tuned_metrics.selection_method }} (saved tuned cutoff: {{ "%.4f"|format(tuned_metrics.decision_threshold) }}). The Low/Medium/High display bands remain the transparent review-support thresholds shown above.</p>{% else %}<p><strong>Threshold tuning:</strong> not available in the saved model report.</p>{% endif %}
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Feature Basis</span><h3>Why These Features?</h3></div>
+        <p>The selected features are common ICU physiology, laboratory, demographic, and admission-context variables used in ICU severity and prediction settings.</p>
+        <div class="table-container"><table><thead><tr><th>Actual model feature</th><th>Reasonable input context</th></tr></thead><tbody>
+            <tr><td><code>age</code></td><td>Demographic/severity context</td></tr><tr><td><code>gender</code></td><td>Demographic context used by the dataset/model</td></tr><tr><td><code>admission_type</code></td><td>Admission context</td></tr>
+            <tr><td><code>heart_rate_avg</code></td><td>Acute physiology signal</td></tr><tr><td><code>heart_rate_max</code></td><td>Acute physiology signal</td></tr><tr><td><code>systolic_bp_avg</code></td><td>Cardiovascular-status context</td></tr>
+            <tr><td><code>respiratory_rate_avg</code></td><td>Respiratory-status context</td></tr><tr><td><code>temperature_avg</code></td><td>Acute physiology signal</td></tr><tr><td><code>spo2_avg</code></td><td>Oxygenation/respiratory context</td></tr>
+            <tr><td><code>creatinine_max</code></td><td>Renal-function laboratory context</td></tr><tr><td><code>glucose_max</code></td><td>Metabolic laboratory context</td></tr><tr><td><code>wbc_max</code></td><td>Infection/inflammation-related laboratory context</td></tr><tr><td><code>hemoglobin_min</code></td><td>Blood/laboratory context</td></tr>
+        </tbody></table></div>
+        <div class="info-box">These feature descriptions explain why the variables are reasonable model inputs. They are not manual diagnosis rules.</div>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Pipeline</span><h3>Review Workflow: From Data to Review Support</h3></div>
+        <ol><li>A dataset case is loaded or a manual case is entered.</li><li>Values are aligned to the trained model input schema.</li><li>Missing values are handled by the preprocessing/model pipeline.</li><li>The supervised ML model outputs a probability.</li><li>The probability is mapped to Low / Medium / High risk.</li><li>Explainability shows model-important features.</li><li>Similar-case retrieval, clustering, anomaly detection, and uncertainty estimation add review context.</li><li>The ICU Quality &amp; Patient Safety Coordinator records status, priority, notes, and audit history.</li></ol>
+    </section>
+
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Methods</span><h3>Real AI Methods Used</h3></div>
+        <ul><li>Supervised ML risk prediction</li><li>Explainable AI using saved model feature importance</li><li>KNN similar-case retrieval</li><li>KMeans clustering</li><li>IsolationForest anomaly detection</li><li>Uncertainty estimation using probability, entropy, threshold distance, and data quality</li><li>Optional live generative AI only when <code>LLM_API_KEY</code> is configured</li></ul>
+    </section>
+
+    <section class="case-panel">
         <div class="section-heading"><span class="eyebrow">Metrics</span><h3>What the Metrics Mean</h3></div>
         <div class="summary-grid dashboard-summary-grid">
-            <div class="summary-card metric-card-modern"><span>Accuracy</span><strong>{{ model_metrics.get('accuracy', 'Not available') }}</strong><p>Overall correct predictions.</p></div>
-            <div class="summary-card metric-card-modern"><span>Precision</span><strong>{{ model_metrics.get('precision', 'Not available') }}</strong><p>How many flagged cases were truly positive in the test set.</p></div>
-            <div class="summary-card metric-card-modern"><span>Recall</span><strong>{{ model_metrics.get('recall', 'Not available') }}</strong><p>How many true positive cases were caught.</p></div>
-            <div class="summary-card metric-card-modern"><span>F1</span><strong>{{ model_metrics.get('f1_score', 'Not available') }}</strong><p>Balance between precision and recall.</p></div>
-            <div class="summary-card metric-card-modern"><span>ROC-AUC</span><strong>{{ model_metrics.get('roc_auc', 'Not available') }}</strong><p>Ranking ability.</p></div>
-            <div class="summary-card metric-card-modern"><span>Brier score</span><strong>{{ model_metrics.get('brier_score', 'Not available') }}</strong><p>Calibration score if available.</p></div>
+            <div class="summary-card metric-card-modern"><span>Accuracy</span><strong>{% if model_metrics.get('accuracy') is not none %}{{ "%.3f"|format(model_metrics.get('accuracy')) }}{% else %}<small>Not available</small>{% endif %}</strong><p>Overall correct predictions.</p></div>
+            <div class="summary-card metric-card-modern"><span>Precision</span><strong>{% if model_metrics.get('precision') is not none %}{{ "%.3f"|format(model_metrics.get('precision')) }}{% else %}<small>Not available</small>{% endif %}</strong><p>How many flagged cases were truly positive in the test set.</p></div>
+            <div class="summary-card metric-card-modern"><span>Recall</span><strong>{% if model_metrics.get('recall') is not none %}{{ "%.3f"|format(model_metrics.get('recall')) }}{% else %}<small>Not available</small>{% endif %}</strong><p>How many true positive cases were caught.</p></div>
+            <div class="summary-card metric-card-modern"><span>F1</span><strong>{% if model_metrics.get('f1_score') is not none %}{{ "%.3f"|format(model_metrics.get('f1_score')) }}{% else %}<small>Not available</small>{% endif %}</strong><p>Balance between precision and recall.</p></div>
+            <div class="summary-card metric-card-modern"><span>ROC-AUC</span><strong>{% if model_metrics.get('roc_auc') is not none %}{{ "%.3f"|format(model_metrics.get('roc_auc')) }}{% else %}<small>Not available</small>{% endif %}</strong><p>Ranking ability.</p></div>
+            <div class="summary-card metric-card-modern"><span>Brier score</span><strong>{% if model_metrics.get('brier_score') is not none %}{{ "%.3f"|format(model_metrics.get('brier_score')) }}{% else %}<small>Not available</small>{% endif %}</strong><p>Calibration score if available.</p></div>
         </div>
         <h4>Confusion Matrix</h4>
         {% if model_metrics.get('confusion_matrix') %}<pre class="command-block">{{ model_metrics.get('confusion_matrix') }}</pre>{% else %}<p class="notice">Not available</p>{% endif %}
@@ -62,5 +100,11 @@
     </section>
 
     <section class="case-panel"><div class="section-heading"><span class="eyebrow">Scope</span><h3>Limitations</h3></div><ul><li>Uses the processed academic dataset included with this software.</li><li>The outcome label is used only for training/evaluation, not as prediction input.</li><li>The model supports review priority and transparency, not medical decisions.</li></ul></section>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Related Work</span><h3>Scientific Basis / Related Work</h3></div>
+        <p>MIMIC-style ICU prediction benchmarks commonly study in-hospital mortality prediction, decompensation detection, length-of-stay prediction, and phenotype classification. MIMIC processing frameworks emphasize standardized extraction, imputation, and reproducible preprocessing.</p>
+        <p>ICU severity scoring systems such as APACHE II and SOFA use physiological, laboratory, organ-function, age, and admission-context variables. This supports the use of these feature families as model inputs, but this project uses those ideas as academic and software-engineering grounding, not as clinical validation.</p>
+        <p class="table-subtext"><strong>Reference labels:</strong> Harutyunyan et al., 2019, MIMIC-III Benchmarks; MIMIC-Extract, 2019; APACHE II; SOFA.</p>
+    </section>
 </section>
 {% endblock %}

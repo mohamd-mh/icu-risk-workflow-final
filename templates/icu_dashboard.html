@@ -5,19 +5,19 @@
     <div class="page-header page-header-modern dashboard-hero">
         <div>
             <span class="eyebrow">Overview</span>
-            <h2>Case Review Overview</h2>
-            <p>A quick snapshot of review progress and recent activity. The Review Queue is the main work page.</p>
+            <h2>Quality Review Overview</h2>
+            <p>A quick snapshot of review progress and recent activity for the ICU Quality &amp; Patient Safety Coordinator. The Quality Review Queue is the main workspace.</p>
         </div>
-        <div class="button-row"><a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a><a class="button-link secondary" href="{{ url_for('new_case') }}">Add New Case</a><a class="button-link secondary" href="{{ url_for('icu_cases') }}">Open Case Library</a></div>
+        <div class="button-row"><a class="button-link" href="{{ url_for('review_queue') }}">Open Quality Review Queue</a><a class="button-link secondary" href="{{ url_for('new_case') }}">Add New Case</a><a class="button-link secondary" href="{{ url_for('icu_cases') }}">Open Case Library</a></div>
     </div>
 
     <div class="summary-grid dashboard-summary-grid">
         <div class="summary-card metric-card-modern"><span>Waiting for Review</span><strong>{{ workflow_stats.status_counts.New + workflow_stats.status_counts['In Review'] }}</strong></div>
-        <div class="summary-card urgent metric-card-modern metric-danger"><span>Urgent Cases</span><strong>{{ workflow_stats.urgent }}</strong></div>
-        <div class="summary-card metric-card-modern"><span>Reviewed Cases</span><strong>{{ workflow_stats.status_counts.Reviewed }}</strong></div>
-        <div class="summary-card metric-card-modern"><span>New Manual Cases</span><strong>{{ workflow_stats.manual_cases }}</strong></div>
-        <div class="summary-card metric-card-modern"><span>Dataset Cases</span><strong>{{ total_cases }}</strong></div>
-        <div class="summary-card high metric-card-modern metric-danger"><span>High AI Risk</span><strong>{{ ai_high_risk_count }}</strong></div>
+        <div class="summary-card urgent metric-card-modern metric-danger"><span>Urgent Review Items</span><strong>{{ workflow_stats.urgent }}</strong></div>
+        <div class="summary-card metric-card-modern"><span>Needs Follow-up</span><strong>{{ workflow_stats.status_counts['Needs Follow-up'] }}</strong></div>
+        <div class="summary-card metric-card-modern"><span>Reviewed</span><strong>{{ workflow_stats.status_counts.Reviewed }}</strong></div>
+        <div class="summary-card metric-card-modern"><span>Manual Cases</span><strong>{{ workflow_stats.manual_cases }}</strong></div>
+        <div class="summary-card metric-card-modern"><span>Recent Activity</span><strong>{{ recent_activity|length }}</strong></div>
     </div>
 
     <section class="case-panel">

@@ -1,54 +1,17 @@
-﻿{% extends "base.html" %}
-
+{% extends "base.html" %}
 {% block content %}
 <section class="page-section wide-section software-system-page">
-    <div class="page-header page-header-modern">
-        <div>
-            <span class="eyebrow">Home</span>
-            <h2>AI-Assisted ICU Case Review System</h2>
-            <p>
-                This system helps a Case Review Coordinator decide which ICU
-                cases to review first, understand why the model marked a case
-                as important, track review progress, and keep notes with audit
-                history.
-            </p>
-        </div>
+    <div class="page-header page-header-modern workflow-hero">
+        <div><span class="eyebrow">Coordinator Workspace</span><h2>AI-Assisted ICU Quality Review System</h2><p>A workflow tool for ICU quality review, case prioritization, documentation, and audit tracking.</p></div>
+        <a class="button-link large-button" href="{{ url_for('review_queue') }}">Open Quality Review Queue</a>
     </div>
-
-    <div class="summary-grid dashboard-summary-grid">
-        <article class="metric-card feature-tile">
-            <span class="tile-icon">QUEUE</span>
-            <strong>Review Queue</strong>
-            <p>See what needs review, update status and priority, assign a reviewer, add notes, and archive local records.</p>
-            <a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a>
-        </article>
-        <article class="metric-card feature-tile">
-            <span class="tile-icon">ADD</span>
-            <strong>Add New Case</strong>
-            <p>Enter case values and run AI review support before adding the case to the queue.</p>
-            <a class="button-link" href="{{ url_for('new_case') }}">Add New Case</a>
-        </article>
-        <article class="metric-card feature-tile">
-            <span class="tile-icon">LIB</span>
-            <strong>Case Library</strong>
-            <p>Browse the included processed ICU cases and add selected cases to the review queue.</p>
-            <a class="button-link" href="{{ url_for('icu_cases') }}">Open Case Library</a>
-        </article>
+    <div class="summary-grid home-action-grid">
+        <article class="metric-card feature-tile"><span class="tile-icon">QUEUE</span><strong>Quality Review Queue</strong><p>Review active cases, priorities, status, notes, and follow-up.</p><a class="button-link" href="{{ url_for('review_queue') }}">Open Quality Review Queue</a></article>
+        <article class="metric-card feature-tile"><span class="tile-icon">ADD</span><strong>Add New Case</strong><p>Enter available values and run AI-supported review analysis.</p><a class="button-link" href="{{ url_for('new_case') }}">Add New Case</a></article>
+        <article class="metric-card feature-tile"><span class="tile-icon">LIB</span><strong>Case Library</strong><p>Find a processed ICU case and open or add it for review.</p><a class="button-link" href="{{ url_for('icu_cases') }}">Open Case Library</a></article>
+        <article class="metric-card feature-tile"><span class="tile-icon">AI</span><strong>AI Model Report</strong><p>Review model inputs, processing, metrics, and AI methods.</p><a class="button-link" href="{{ url_for('ai_evaluation') }}">View AI Model Report</a></article>
     </div>
-
-    <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Real AI in the background</span><h3>How the system supports review</h3></div>
-        <div class="workflow-steps compact-architecture-steps">
-            <span><strong>Risk prediction</strong><small>Trained supervised ML model</small></span>
-            <span><strong>Explanation</strong><small>Feature importance and case values</small></span>
-            <span><strong>Similar cases</strong><small>KNN retrieval from the processed dataset</small></span>
-            <span><strong>Anomaly / uncertainty check</strong><small>IsolationForest and computed confidence</small></span>
-        </div>
-    </section>
-
-    <div class="info-box">
-        This academic prototype supports case review and documentation only. It
-        does not provide diagnosis, medication, or treatment recommendations.
-    </div>
+    <section class="case-panel compact-help-panel"><div class="section-heading"><span class="eyebrow">At a glance</span><h3>What this system helps with</h3></div><ul class="check-list"><li>Prioritize cases for review</li><li>Understand AI-supported risk summaries</li><li>Document notes and follow-up status</li><li>Maintain audit history</li></ul></section>
+    <div class="info-box safety-note"><strong>Quality-review support only.</strong> The system does not diagnose, prescribe, recommend treatment, or replace qualified clinical staff.</div>
 </section>
 {% endblock %}

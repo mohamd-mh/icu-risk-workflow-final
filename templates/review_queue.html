@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-section wide-section review-queue-page">
     <div class="page-header page-header-modern">
-        <div><span class="eyebrow">Main Work Page</span><h2>Review Queue</h2><p>Cases waiting for review, follow-up, or documentation.</p></div>
+        <div><span class="eyebrow">Main Coordinator Workspace</span><h2>Quality Review Queue</h2><p>Track cases waiting for review, follow-up, or documentation.</p></div>
         <a class="button-link large-button" href="{{ url_for('new_case') }}">Add New Case</a>
     </div>
 
@@ -11,17 +11,17 @@
 
     <section class="filter-panel filter-panel-modern">
         <form method="get" class="filter-form worklist-filter-form">
-            <label>Status<select name="status"><option value="">All</option>{% for status in statuses %}<option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
-            <label>Priority<select name="priority"><option value="">All</option>{% for priority in priorities %}<option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
-            <label>Risk<select name="ai_risk_level"><option value="">All</option>{% for risk in ['High','Medium','Low'] %}<option value="{{ risk }}" {% if filters.ai_risk_level == risk %}selected{% endif %}>{{ risk }}</option>{% endfor %}</select></label>
-            <label class="search-field">Search<input type="search" name="search" value="{{ filters.search }}" placeholder="Case ID or reviewer"></label>
+            <label class="search-field">Search<input type="search" name="search" value="{{ filters.search }}" placeholder="Case ID or coordinator"></label>
+            <label>Status<select name="status"><option value="__active__" {% if filters.status == '__active__' %}selected{% endif %}>Active Work</option><option value="All" {% if filters.status == 'All' %}selected{% endif %}>All</option>{% for status in statuses %}<option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
+            <label>Review Priority<select name="priority"><option value="">All</option>{% for priority in priorities %}<option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
+            <label>AI Risk<select name="ai_risk_level"><option value="">All</option>{% for risk in ['High','Medium','Low'] %}<option value="{{ risk }}" {% if filters.ai_risk_level == risk %}selected{% endif %}>{{ risk }}</option>{% endfor %}</select></label>
             <div class="filter-actions"><button type="submit">Apply Filters</button><a class="button-link secondary" href="{{ url_for('review_queue') }}">Clear</a></div>
         </form>
     </section>
 
     <div class="table-container worklist-table-container worklist-card">
         <table class="worklist-table">
-            <thead><tr><th>Case</th><th>Risk</th><th>Priority</th><th>Status</th><th>Reviewer</th><th>Last Updated</th><th>Action</th></tr></thead>
+            <thead><tr><th>Case</th><th>AI Risk</th><th>Priority</th><th>Status</th><th>Coordinator</th><th>Last Updated</th><th>Action</th></tr></thead>
             <tbody>
             {% for item in items %}
                 <tr>
@@ -33,8 +33,7 @@
                     <td>{{ item.updated_at }}</td>
                     <td class="action-column">
                         <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}">Open</a>
-                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#edit">Edit</a>
-                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Add Note</a>
+                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Note</a>
                         <form method="post" action="{{ url_for('review_item_archive', item_id=item.id) }}" class="inline-form"><button type="submit" class="table-action">Archive</button></form>
                     </td>
                 </tr>

@@ -1,27 +1,18 @@
-﻿{% extends "base.html" %}
-
+{% extends "base.html" %}
 {% block content %}
-<section class="page-section wide-section">
-    <div class="page-header page-header-modern"><div><span class="eyebrow">User Guide</span><h2>AI-Assisted ICU Case Review System - User Guide</h2><p>A simple manual for the Case Review Coordinator.</p></div><a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a></div>
-
-    <section class="case-panel"><h3>Who uses this system?</h3><p>The Case Review Coordinator manages ICU case review tasks, prioritizes cases, adds notes, and tracks review progress.</p></section>
-    <section class="case-panel"><h3>What can the user do?</h3><ul><li>See which cases need review first.</li><li>Add dataset or manual cases to the queue.</li><li>Read the AI summary and advanced AI details.</li><li>Edit status, priority, and reviewer.</li><li>Add notes and view audit history.</li><li>Print case summaries.</li></ul></section>
-    <section class="case-panel"><h3>How to run the system</h3><pre class="command-block">cd /c/projects/Final_Project_Clean/Software_System
-python -m venv .venv
-source .venv/Scripts/activate
-pip install -r requirements.txt
-./.venv/Scripts/python.exe app.py</pre><pre class="command-block">cd C:\projects\Final_Project_Clean\Software_System
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-.\.venv\Scripts\python.exe app.py</pre></section>
-    <section class="case-panel"><h3>Main workflow</h3><ol><li>Open Review Queue.</li><li>Add a dataset case or add a new manual case.</li><li>Open the case review item.</li><li>Read the AI Summary.</li><li>Update status, priority, reviewer, and notes.</li><li>Check the audit trail.</li></ol></section>
-    <section class="case-panel"><h3>Review Queue</h3><p>The queue shows cases waiting for review, follow-up, or documentation. Use filters for Status, Priority, Risk, and Search.</p></section>
-    <section class="case-panel"><h3>Add New Case</h3><p>Enter basic information, vital signs, and lab values. Select Run AI Analysis to create an AI-supported review item.</p></section>
-    <section class="case-panel"><h3>Case Library</h3><p>The Case Library contains the included processed ICU cases. Open a case or add it to the Review Queue.</p></section>
-    <section class="case-panel"><h3>Reading the AI Summary</h3><p>The AI Summary shows risk level, probability, confidence, key explanation features, and data quality warnings.</p></section>
-    <section class="case-panel"><h3>Advanced AI Details</h3><p>Advanced details include similar cases, cluster context, anomaly detection, uncertainty details, explainability table, and baseline comparison. These are generated from real ML/data algorithms and are provided for transparency.</p></section>
-    <section class="case-panel"><h3>Notes and Audit Trail</h3><p>Notes and status changes are saved locally. Audit events show what changed and when.</p></section>
-    <section class="case-panel"><h3>Safety limits</h3><p>This academic prototype supports case review and documentation only. It does not provide diagnosis, medication, or treatment recommendations.</p></section>
+<section class="page-section wide-section user-guide-page">
+    <div class="page-header page-header-modern"><div><span class="eyebrow">User Manual</span><h2>AI-Assisted ICU Quality Review System</h2><p>A practical guide for completing the review workflow.</p></div><a class="button-link" href="{{ url_for('review_queue') }}">Open Quality Review Queue</a></div>
+    <section class="case-panel guide-callout"><h3>What the system does</h3><p>It combines ICU case tracking, AI-supported review summaries, documentation, follow-up status, and audit history in one local workflow.</p></section>
+    <section class="case-panel"><h3>Who uses it?</h3><p>The ICU Quality &amp; Patient Safety Coordinator manages review prioritization, follow-up, notes, status, and audit history. The user does not diagnose patients or choose treatments.</p></section>
+    <section class="case-panel"><h3>How to run it</h3><pre class="command-block">cd C:\projects\Final_Project_Clean\Software_System
+C:\projects\icu-risk-workflow\.venv\Scripts\python.exe app.py</pre><p>Open <code>http://127.0.0.1:5000/</code>.</p></section>
+    <section class="case-panel"><h3>Main workflow</h3><ol class="workflow-list"><li>Open the Quality Review Queue.</li><li>Open an existing case or add a new one.</li><li>Read the AI Summary.</li><li>Set priority and status.</li><li>Add a coordinator note.</li><li>Check the audit trail.</li><li>Open Advanced AI Details only when more context is needed.</li></ol></section>
+    <section class="case-panel"><h3>Quality Review Queue</h3><p>The main work page shows cases waiting for review, follow-up, or documentation. Search and filter by status, priority, or AI risk, then open a review item, add a note, or archive it.</p></section>
+    <section class="case-panel"><h3>Add New Case</h3><p>Enter available basic context, vital signs, and laboratory values. Missing inputs are handled by the model pipeline. Run AI Review Analysis to create and open a review item.</p></section>
+    <section class="case-panel"><h3>Case Library</h3><p>Find a processed ICU case, open its assessment, or add it to the Quality Review Queue.</p></section>
+    <section class="case-panel"><h3>Reading the AI Summary</h3><p>The supervised ML model produces a probability mapped to Low, Medium, or High review-support risk. Confidence, top model signals, and data-quality notes help the coordinator prioritize review; no individual input manually determines risk.</p></section>
+    <section class="case-panel"><h3>Advanced AI Details</h3><p>When needed, inspect explainability, KNN similar cases, KMeans cluster context, IsolationForest anomaly detection, uncertainty, and the baseline-versus-modular workflow comparison. The AI Model Report explains processing, features, methods, metrics, and related work.</p></section>
+    <section class="case-panel"><h3>Notes and Audit Trail</h3><p>Save coordinator notes with status and priority. The audit trail records review changes for follow-up and traceability.</p></section>
+    <section class="case-panel guide-callout safety-guide-card"><h3>What the system does not do</h3><p>It does not diagnose, prescribe, recommend treatment, or replace qualified clinical staff. Its outputs support quality review and documentation only.</p></section>
 </section>
 {% endblock %}

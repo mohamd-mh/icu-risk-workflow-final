@@ -176,7 +176,13 @@ def list_review_items(filters: dict[str, str] | None = None) -> list[dict[str, A
     filters = filters or {}
     clauses: list[str] = []
     params: list[Any] = []
-    for field in ["status", "priority", "ai_risk_level"]:
+    status_filter = filters.get("status")
+    if status_filter == "__active__":
+        clauses.append("ri.status != 'Archived'")
+    elif status_filter and status_filter != "All":
+        clauses.append("ri.status = ?")
+        params.append(status_filter)
+    for field in ["priority", "ai_risk_level"]:
         if filters.get(field):
             clauses.append(f"ri.{field} = ?")
             params.append(filters[field])
