@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 <section class="page-section wide-section new-case-page">
@@ -7,17 +7,26 @@
     <div class="new-case-layout">
     <section class="case-panel new-case-form-panel">
         <div class="info-box">Missing values are allowed. The model pipeline handles missing inputs using imputation. The result supports quality review only, not diagnosis.</div>
+        <div class="info-box">Manual review cases are local submissions entered into this software for AI-supported quality review. They do not modify the original processed ICU dataset and do not create real hospital ICU stays.</div>
+        {% if errors %}<div class="warning-box">Please fix the highlighted field(s) below before running the analysis.</div>{% endif %}
         <form method="post" class="review-form full-review-form manual-case-form">
             <fieldset class="form-input-card"><legend>Basic Context</legend><div class="form-card-grid">
-                <label>Gender<select name="gender"><option value="M">M</option><option value="F">F</option></select></label>
-                <label>Age<input type="number" step="0.1" name="age"></label>
-                <label>Admission Type<select name="admission_type"><option>EMERGENCY</option><option>ELECTIVE</option><option>URGENT</option><option>NEWBORN</option></select></label>
+                <label>Gender<select name="gender">
+                    <option value="M" {% if form_values.get('gender') == 'M' %}selected{% endif %}>M</option>
+                    <option value="F" {% if form_values.get('gender') == 'F' %}selected{% endif %}>F</option>
+                </select></label>
+                <label>Age<input type="text" inputmode="decimal" autocomplete="off" class="{% if errors.get('age') %}field-invalid{% endif %}" name="age" value="{{ form_values.get('age', '') }}">{% if errors.get('age') %}<span class="field-error">{{ errors.age }}</span>{% endif %}</label>
+                <label>Admission Type<select name="admission_type">
+                    {% for option in ['EMERGENCY', 'ELECTIVE', 'URGENT', 'NEWBORN'] %}
+                    <option value="{{ option }}" {% if form_values.get('admission_type') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select></label>
             </div></fieldset>
             <fieldset class="form-input-card"><legend>Vital Signs</legend><div class="form-card-grid">
-                {% for field,label in [('heart_rate_avg','Heart rate avg'),('heart_rate_max','Heart rate max'),('systolic_bp_avg','Systolic BP avg'),('respiratory_rate_avg','Respiratory rate avg'),('temperature_avg','Temperature avg'),('spo2_avg','SpO2 avg')] %}<label>{{ label }}<input type="number" step="0.01" name="{{ field }}"></label>{% endfor %}
+                {% for field,label in [('heart_rate_avg','Heart rate avg'),('heart_rate_max','Heart rate max'),('systolic_bp_avg','Systolic BP avg'),('respiratory_rate_avg','Respiratory rate avg'),('temperature_avg','Temperature avg'),('spo2_avg','SpO2 avg')] %}<label>{{ label }}<input type="text" inputmode="decimal" autocomplete="off" class="{% if errors.get(field) %}field-invalid{% endif %}" name="{{ field }}" value="{{ form_values.get(field, '') }}">{% if errors.get(field) %}<span class="field-error">{{ errors[field] }}</span>{% endif %}</label>{% endfor %}
             </div></fieldset>
             <fieldset class="form-input-card"><legend>Laboratory Values</legend><div class="form-card-grid">
-                {% for field,label in [('creatinine_max','Creatinine max'),('glucose_max','Glucose max'),('wbc_max','WBC max'),('hemoglobin_min','Hemoglobin min')] %}<label>{{ label }}<input type="number" step="0.01" name="{{ field }}"></label>{% endfor %}
+                {% for field,label in [('creatinine_max','Creatinine max'),('glucose_max','Glucose max'),('wbc_max','WBC max'),('hemoglobin_min','Hemoglobin min')] %}<label>{{ label }}<input type="text" inputmode="decimal" autocomplete="off" class="{% if errors.get(field) %}field-invalid{% endif %}" name="{{ field }}" value="{{ form_values.get(field, '') }}">{% if errors.get(field) %}<span class="field-error">{{ errors[field] }}</span>{% endif %}</label>{% endfor %}
             </div></fieldset>
             <div class="form-submit-row"><button type="submit">Run AI Review Analysis</button><a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a></div>
         </form>
@@ -31,7 +40,7 @@
 
     {% if result %}
     <section class="case-panel ai-assessment-panel">
-        <div class="section-heading"><span class="eyebrow">AI Summary</span><h3>New Case Result</h3></div>
+        <div class="section-heading"><span class="eyebrow">AI Summary</span><h3>Manual Review Case #{{ result.manual_case.id }}</h3></div>
         <div class="summary-grid compact-summary">
             <div class="summary-card"><span>AI Risk</span><strong>{{ result.ai_prediction.ai_risk_level }}</strong></div>
             <div class="summary-card"><span>Probability</span><strong>{{ result.ai_prediction.risk_probability }}</strong></div>

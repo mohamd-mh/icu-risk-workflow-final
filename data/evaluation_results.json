@@ -114,5 +114,5 @@
       "workflow_trace": "Workflow trace"
     }
   },
-  "summary": "The multi-agent workflow mainly improves reliability and transparency. Its accuracy depends on the risk-threshold configuration and should be interpreted together with precision, recall, F1-score, and the confusion matrix."
+  "summary": "The AI model shows high recall but low precision, making the prototype more suitable for review prioritization and transparency than autonomous clinical prediction. The main workflow contribution is transparency, traceability, documentation, and auditability. The system does not provide diagnosis or treatment advice."
 }

@@ -1304,6 +1304,16 @@ tbody tr:hover td {
     background: #eef3f8;
 }
 
+.badge.case-type {
+    color: #334e68;
+    background: #eef3f8;
+}
+
+.case-type-manual {
+    color: #4b2e83;
+    background: #ece3fb;
+}
+
 .priority-watch {
     color: #7c4a03;
     background: #fff0b8;
@@ -2517,6 +2527,15 @@ textarea:focus {
 .form-card-grid label { margin: 0; }
 .form-submit-row { display: flex; justify-content: flex-end; }
 .form-submit-row button { min-width: 220px; }
+
+.field-error {
+    display: block;
+    margin-top: 4px;
+    color: #b42318;
+    font-size: 12px;
+    font-weight: 600;
+}
+.field-invalid { border-color: #b42318 !important; }
 
 .metric-card-modern { min-width: 0; overflow: hidden; }
 .metric-card-modern strong {

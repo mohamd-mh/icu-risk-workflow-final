@@ -25,6 +25,16 @@ The system automatically creates local SQLite storage at `data/software_system.d
 - Features were chosen because these feature families are common in ICU severity and prediction settings. Individual values do not manually determine risk; the trained ML model learns statistical patterns from processed data.
 - If processed MIMIC-derived data is shared, keep the repository private or limited to the course in accordance with the applicable data-use terms.
 
+## Dataset Provenance
+
+- Raw MIMIC files (e.g. `CHARTEVENTS.csv`, `LABEVENTS.csv`) are **not included** in this submission and are not processed by any code in this repository.
+- `data/patient_features_ai.csv` is a processed academic feature table used for model training and evaluation. It contains one row per ICU stay with the demographic, admission, physiology, and laboratory features listed above, plus the outcome label.
+- Target label: `hospital_expire_flag` (used only for training/evaluation, never as a model input).
+- Excluded leakage/identifier columns (never used as model inputs): `subject_id`, `hadm_id`, `icustay_id`, `hospital_expire_flag`.
+- Missing values are not hand-filled; they are handled by the preprocessing/model pipeline (median imputation for numeric features, most-frequent imputation for categorical features, as implemented in `ml/train_ai_model.py`).
+- The submission package includes the processed feature table used by the prototype. The raw extraction script and raw MIMIC tables are not included.
+- Because this processed table is derived from restricted-access MIMIC-III data, it should remain course-limited/private and not be redistributed outside the academic submission in accordance with the applicable data-use terms.
+
 ## Real AI Components
 
 - Supervised ML risk prediction from `models/ai_risk_model.pkl`
@@ -36,16 +46,37 @@ The system automatically creates local SQLite storage at `data/software_system.d
 - Optional live generative AI with `LLM_API_KEY`
 - AI Model Report using saved metadata, transparency information, and real metrics
 
+## Workflow Design Note
+
+The implemented prototype is not a full autonomous AutoGen-style multi-agent
+negotiation system. It uses a modular sequence of specialized components for
+prediction, verification, explainability, similarity, anomaly detection,
+uncertainty estimation, and review documentation. The "baseline" and
+"multi-agent workflow" pipelines are both rule-based scoring components; the
+only real LLM call in the system is the optional generative-AI case-summary
+assistant, which is used only when `LLM_API_KEY` is configured and otherwise
+falls back to an offline templated summary built from local model outputs.
+
 ## Run
+
+Clone or open this repository, then create a virtual environment named `.venv` in the project root.
 
 PowerShell:
 
 ```powershell
-cd C:\projects\Final_Project_Clean\Software_System
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-.\.venv\Scripts\python.exe app.py
+python app.py
+```
+
+Git Bash:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -r requirements.txt
+python app.py
 ```
 
 Open `http://127.0.0.1:5000/`.

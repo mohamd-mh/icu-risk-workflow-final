@@ -1,4 +1,4 @@
-"""Evaluation runner for baseline and active multi-agent workflow."""
+"""Evaluation runner for the baseline pipeline and the modular agent-inspired workflow."""
 
 import json
 from pathlib import Path
@@ -68,7 +68,7 @@ def check_data_leakage(patients):
 
 
 def run_evaluation(csv_path="data/patient_features_ai.csv"):
-    """Evaluate baseline and active multi-agent outputs on patient_features_ai.csv."""
+    """Evaluate baseline and modular workflow outputs on patient_features_ai.csv."""
     patients = pd.read_csv(csv_path)
 
     y_true = []
@@ -145,10 +145,11 @@ def run_evaluation(csv_path="data/patient_features_ai.csv"):
             },
         },
         "summary": (
-            "The multi-agent workflow mainly improves reliability and transparency. "
-            "Its accuracy depends on the risk-threshold configuration and should "
-            "be interpreted together with precision, recall, F1-score, and the "
-            "confusion matrix."
+            "The AI model shows high recall but low precision, making the "
+            "prototype more suitable for review prioritization and transparency "
+            "than autonomous clinical prediction. The main workflow contribution "
+            "is transparency, traceability, documentation, and auditability. "
+            "The system does not provide diagnosis or treatment advice."
         ),
     }
 

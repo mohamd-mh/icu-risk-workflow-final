@@ -1,4 +1,12 @@
-"""Active orchestrator for the planning-driven multi-agent workflow."""
+"""Modular agent-inspired ICU quality review workflow.
+
+Runs a fixed sequence of specialized rule-based components (data validation,
+weighted clinical scoring, verification, explanation). This is not a full
+autonomous AutoGen-style multi-agent negotiation system: there is no
+independent planning, delegation, or LLM reasoning between steps - each
+component is a plain function call whose output feeds the next step in a
+fixed order.
+"""
 
 from baseline.baseline_pipeline import run_baseline
 

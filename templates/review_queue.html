@@ -25,7 +25,7 @@
             <tbody>
             {% for item in items %}
                 <tr>
-                    <td>{% if item.icustay_id %}ICU {{ item.icustay_id }}{% else %}Manual {{ item.manual_case_id }}{% endif %}</td>
+                    <td>{% if item.icustay_id %}<span class="badge case-type">Dataset</span> ICU Case {{ item.icustay_id }}{% else %}<span class="badge case-type case-type-manual">Manual</span> Manual Review Case #{{ item.manual_case_id }}{% endif %}</td>
                     <td><span class="badge risk-{{ item.ai_risk_level|lower if item.ai_risk_level else 'low' }}">{{ item.ai_risk_level or 'Not available' }}</span></td>
                     <td><span class="badge priority priority-{{ item.priority|lower }}">{{ item.priority }}</span></td>
                     <td><span class="badge status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span></td>

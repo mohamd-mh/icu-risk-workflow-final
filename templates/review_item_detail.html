@@ -10,8 +10,8 @@
     <section class="case-panel review-workflow-card" id="edit">
         <div class="section-heading"><span class="eyebrow">Summary</span><h3>Review Item Summary</h3></div>
         <div class="detail-grid">
+            <div><span>Case Type</span><strong>{% if item.icustay_id %}<span class="badge case-type">Dataset</span> ICU Case {{ item.icustay_id }}{% else %}<span class="badge case-type case-type-manual">Manual</span> Manual Review Case #{{ item.manual_case_id }}{% endif %}</strong></div>
             <div><span>Source</span><strong>{{ item.source_type }}</strong></div>
-            <div><span>ICU Stay</span><strong>{{ item.icustay_id or 'Manual case' }}</strong></div>
             <div><span>AI Risk</span><strong>{{ item.ai_risk_level or 'Not available' }}</strong></div>
             <div><span>AI Probability</span><strong>{{ item.ai_probability if item.ai_probability is not none else 'Not available' }}</strong></div>
             <div><span>Data Quality</span><strong>{{ item.data_quality or 'Not available' }}</strong></div>

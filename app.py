@@ -600,30 +600,69 @@ def review_item_delete(item_id):
     return redirect(url_for("review_queue"))
 
 
+NUMERIC_CASE_FIELDS = [
+    ("age", "Age"),
+    ("heart_rate_avg", "Heart rate avg"),
+    ("heart_rate_max", "Heart rate max"),
+    ("systolic_bp_avg", "Systolic BP avg"),
+    ("respiratory_rate_avg", "Respiratory rate avg"),
+    ("temperature_avg", "Temperature avg"),
+    ("spo2_avg", "SpO2 avg"),
+    ("creatinine_max", "Creatinine max"),
+    ("glucose_max", "Glucose max"),
+    ("wbc_max", "WBC max"),
+    ("hemoglobin_min", "Hemoglobin min"),
+]
+
+
 def parse_manual_case_form(form):
-    values = {"gender": form.get("gender", ""), "admission_type": form.get("admission_type", "")}
-    for field in ["age", "heart_rate_avg", "heart_rate_max", "systolic_bp_avg", "respiratory_rate_avg", "temperature_avg", "spo2_avg", "creatinine_max", "glucose_max", "wbc_max", "hemoglobin_min"]:
+    """Parse the Add New Case form.
+
+    Returns (values, raw_values, errors). Empty numeric fields are allowed
+    (None, handled by the model pipeline's own imputation). Non-empty values
+    that are not valid numbers are collected in `errors` instead of raising,
+    so the route can safely re-render the form with the user's input intact.
+    """
+    raw_values = {
+        "gender": form.get("gender", ""),
+        "admission_type": form.get("admission_type", ""),
+    }
+    values = {"gender": raw_values["gender"], "admission_type": raw_values["admission_type"]}
+    errors = {}
+
+    for field, label in NUMERIC_CASE_FIELDS:
         raw = form.get(field, "").strip()
-        values[field] = float(raw) if raw else None
-    return values
+        raw_values[field] = raw
+        if not raw:
+            values[field] = None
+            continue
+        try:
+            values[field] = float(raw)
+        except ValueError:
+            errors[field] = f"{label} must be a valid number."
+
+    return values, raw_values, errors
 
 
 @app.route("/new-case", methods=["GET", "POST"])
 def new_case():
     result = None
+    form_values = {}
+    errors = {}
     if request.method == "POST":
-        case_values = parse_manual_case_form(request.form)
-        ai_prediction = predict_ai_risk(case_values)
-        explainability = explain_ai_prediction(case_values)
-        missing = get_missing_ai_features(explainability)
-        uncertainty = estimate_prediction_uncertainty(ai_prediction, missing, "Manual")
-        similar = find_similar_cases(case_values)
-        cluster = assign_case_cluster(case_values)
-        anomaly = score_case_anomaly(case_values)
-        manual_case = create_manual_case(case_values, ai_prediction)
-        review_item = create_manual_review_item(manual_case)
-        result = {"case_values": case_values, "ai_prediction": ai_prediction, "uncertainty": uncertainty, "similar_cases": similar, "cluster": cluster, "anomaly": anomaly, "manual_case": manual_case, "review_item": review_item}
-    return render_template("new_case.html", title="Add New Case", result=result)
+        case_values, form_values, errors = parse_manual_case_form(request.form)
+        if not errors:
+            ai_prediction = predict_ai_risk(case_values)
+            explainability = explain_ai_prediction(case_values)
+            missing = get_missing_ai_features(explainability)
+            uncertainty = estimate_prediction_uncertainty(ai_prediction, missing, "Manual")
+            similar = find_similar_cases(case_values)
+            cluster = assign_case_cluster(case_values)
+            anomaly = score_case_anomaly(case_values)
+            manual_case = create_manual_case(case_values, ai_prediction)
+            review_item = create_manual_review_item(manual_case)
+            result = {"case_values": case_values, "ai_prediction": ai_prediction, "uncertainty": uncertainty, "similar_cases": similar, "cluster": cluster, "anomaly": anomaly, "manual_case": manual_case, "review_item": review_item}
+    return render_template("new_case.html", title="Add New Case", result=result, form_values=form_values, errors=errors)
 
 @app.route("/ai-evaluation")
 def ai_evaluation():
