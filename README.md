@@ -30,11 +30,15 @@ The system automatically creates local SQLite storage at `data/software_system.d
 - `data/patient_features_ai.csv` is a processed, ML-ready feature table derived from the **full MIMIC-III v1.4 dataset** provided by the course via a shared Google Drive folder (not a separate, smaller, or unofficial data source).
 - Source tables used to build the feature table: `PATIENTS.csv`, `ADMISSIONS.csv`, `ICUSTAYS.csv`, `CHARTEVENTS.csv`, `LABEVENTS.csv`, `D_ITEMS.csv`, and `D_LABITEMS.csv`.
 - Raw MIMIC-III files are **not included** in this repository/submission package, primarily because of size - `CHARTEVENTS.csv` alone is approximately 33GB. The processed feature table (`data/patient_features_ai.csv`) is included in its place and is what the software actually reads and trains on.
-- The submission package includes the processed feature table used by the prototype. The raw extraction script and raw MIMIC tables are not included.
+- The submission package includes the processed feature table used by the prototype. The original extraction script and raw MIMIC tables are not included.
 - Target label: `hospital_expire_flag` (used only for training/evaluation, never as a model input).
 - Excluded leakage/identifier columns (never used as model inputs): `subject_id`, `hadm_id`, `icustay_id`, `hospital_expire_flag`.
 - Missing values are not hand-filled; they are handled by the preprocessing/model pipeline (median imputation for numeric features, most-frequent imputation for categorical features, as implemented in `ml/train_ai_model.py`).
 - Because this processed table is derived from restricted-access MIMIC-III data, it should remain course-limited/private and not be redistributed outside the academic submission in accordance with the applicable data-use terms.
+
+## Data Preprocessing Pipeline
+
+The processed feature table (`patient_features_ai.csv`, 1000 ICU stays) was derived from the full MIMIC-III v1.4 dataset provided via the course's shared Google Drive folder. The extraction process read `PATIENTS.csv`, `ADMISSIONS.csv`, and `ICUSTAYS.csv` for cohort, demographics, and the `hospital_expire_flag` label; `CHARTEVENTS.csv` (~33GB, processed in chunks due to its size) for vital signs (heart rate, systolic BP, respiratory rate, temperature, SpO2); and `LABEVENTS.csv` (processed in chunks) for lab values (creatinine, glucose, WBC, hemoglobin). The original extraction script is not included in this submission package; the processed feature table is included instead.
 
 ## Baseline Methodology
 
