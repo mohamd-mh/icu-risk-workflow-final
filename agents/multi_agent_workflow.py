@@ -106,6 +106,17 @@ def raise_one_level(risk_level):
 
 
 def run_weighted_risk_assessor(patient):
+    """Weighted clinical scorer used only by the modular workflow (not the baseline).
+
+    Extends beyond SIRS with additional physiological and laboratory
+    variables inspired by general ICU severity-scoring concepts (e.g.,
+    APACHE II, SOFA); specific weights (1-3 per factor) reflect engineering
+    judgment and are not calibrated against this dataset or drawn from a
+    specific published scoring table. This is a stated limitation, not a
+    validated clinical score. The baseline pipeline (baseline/risk_rules.py)
+    uses only the 4 cited SIRS criteria (Bone et al., 1992) and does not
+    include these additional variables.
+    """
     heart_rate_avg = get_number(patient, "heart_rate_avg")
     heart_rate_max = get_number(patient, "heart_rate_max")
     systolic_bp_avg = get_number(patient, "systolic_bp_avg")
@@ -209,8 +220,8 @@ def run_explainer(validation_result, baseline_result, risk_result, verification_
 
     explanation = (
         f"The final risk level is {verification_result['final_risk_level']}. "
-        f"The baseline initial risk was {baseline_result['risk_level']} with a score of "
-        f"{baseline_result['risk_score']}. The weighted verification score is "
+        f"The SIRS-based baseline initial risk (Bone et al., 1992) was {baseline_result['risk_level']} "
+        f"with {baseline_result['risk_score']} of 4 criteria met. The weighted verification score is "
         f"{risk_result['weighted_score']} out of {MAX_SCORE}. Data quality is "
         f"{validation_result['data_quality']}. The verifier {changed_text} the risk level. "
         f"Main contributing factors: {factor_text}."
@@ -222,7 +233,7 @@ def build_trace():
     return [
         "Planner Agent defined the required workflow steps.",
         "Data Validator Agent checked data completeness.",
-        "Baseline Risk Assessor produced the initial risk.",
+        "SIRS-based Baseline Risk Assessor produced the initial risk (Bone et al., 1992).",
         "Weighted Clinical Verifier checked severity patterns.",
         "Verifier Agent adjusted or confirmed the risk.",
         "Explainer Agent generated the final explanation.",

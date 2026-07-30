@@ -105,7 +105,8 @@
         <div class="section-heading"><span class="eyebrow">Related Work</span><h3>Scientific Basis / Related Work</h3></div>
         <p>MIMIC-style ICU prediction benchmarks commonly study in-hospital mortality prediction, decompensation detection, length-of-stay prediction, and phenotype classification. MIMIC processing frameworks emphasize standardized extraction, imputation, and reproducible preprocessing.</p>
         <p>ICU severity scoring systems such as APACHE II and SOFA use physiological, laboratory, organ-function, age, and admission-context variables. This supports the use of these feature families as model inputs, but this project uses those ideas as academic and software-engineering grounding, not as clinical validation.</p>
-        <p class="table-subtext"><strong>Reference labels:</strong> Harutyunyan et al., 2019, MIMIC-III Benchmarks; MIMIC-Extract, 2019; APACHE II; SOFA.</p>
+        <p><strong>Baseline uses the SIRS (Systemic Inflammatory Response Syndrome) criteria (Bone et al., 1992):</strong> temperature &gt; 38C or &lt; 36C; heart rate &gt; 90/min; respiratory rate &gt; 20/min; white blood cell count &gt; 12,000/mm3 or &lt; 4,000/mm3. SIRS-positive (2 or more criteria) is mapped to this project's Medium risk level. The modular workflow's separate weighted risk assessor extends beyond SIRS with additional variables inspired by APACHE II/SOFA concepts, using engineering-judgment weights that are not calibrated against this dataset or drawn from a specific published scoring table.</p>
+        <p class="table-subtext"><strong>Reference labels:</strong> Harutyunyan et al., 2019, MIMIC-III Benchmarks; MIMIC-Extract, 2019; APACHE II; SOFA; Bone, R.C., Balk, R.A., Cerra, F.B., et al. (1992). Definitions for sepsis and organ failure and guidelines for the use of innovative therapies in sepsis. Chest, 101(6), 1644-1655.</p>
     </section>
 </section>
 {% endblock %}

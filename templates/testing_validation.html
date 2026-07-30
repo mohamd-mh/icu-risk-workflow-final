@@ -92,6 +92,7 @@
                 <h3>Evaluation Summary</h3>
             </div>
             {% if evaluation_results %}
+                {% if evaluation_results.baseline_method %}<p class="table-subtext">{{ evaluation_results.baseline_method }}</p>{% endif %}
                 {% for section_key, section_label in [("high_risk_detection", "High-risk Detection Results"), ("at_risk_detection", "At-risk Detection Results")] %}
                     {% set section = evaluation_results[section_key] %}
                     <h4>{{ section_label }}</h4>

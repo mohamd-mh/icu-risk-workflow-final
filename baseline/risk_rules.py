@@ -1,17 +1,53 @@
-"""Simple unweighted baseline risk rules."""
+"""SIRS (Systemic Inflammatory Response Syndrome) baseline criteria.
 
+Reference: Bone, R.C., Balk, R.A., Cerra, F.B., et al. (1992). "Definitions
+for sepsis and organ failure and guidelines for the use of innovative
+therapies in sepsis." Chest, 101(6), 1644-1655.
 
-BASELINE_RULES = [
-    ("age", ">=", 75, "Age is 75 or older"),
-    ("admission_type", "==", "EMERGENCY", "Admission type is emergency"),
-    ("systolic_bp_avg", "<=", 90, "Average systolic blood pressure is low"),
-    ("respiratory_rate_avg", ">=", 24, "Average respiratory rate is high"),
-    ("temperature_avg", ">=", 38, "Average temperature is high"),
-    ("spo2_avg", "<=", 92, "Average oxygen saturation is low"),
-    ("creatinine_max", ">=", 2, "Maximum creatinine is high"),
-    ("glucose_max", ">=", 200, "Maximum glucose is high"),
-    ("wbc_max", ">=", 15, "Maximum white blood cell count is high"),
-    ("hemoglobin_min", "<=", 9, "Minimum hemoglobin is low"),
+SIRS is defined by two or more of the four criteria below. This module
+implements exactly those four cited criteria - no other clinical variables
+are part of the official SIRS definition, so systolic blood pressure,
+creatinine, glucose, hemoglobin, SpO2, age, and admission type are
+intentionally NOT evaluated here. Those variables remain used elsewhere by
+the trained ML model (all 13 input features) and by the separate weighted
+risk assessor stage in agents/multi_agent_workflow.py, which is explicitly
+documented there as engineering judgment, not a validated clinical score.
+"""
+
+# Named, cited thresholds (Bone et al. 1992) - not magic numbers.
+SIRS_TEMPERATURE_HIGH_C = 38     # Criterion 1: temperature > 38 C
+SIRS_TEMPERATURE_LOW_C = 36      # Criterion 1: temperature < 36 C
+SIRS_HEART_RATE_MIN = 90         # Criterion 2: heart rate > 90/min
+SIRS_RESPIRATORY_RATE_MIN = 20   # Criterion 3: respiratory rate > 20/min
+
+# Criterion 4: WBC > 12,000/mm3 or < 4,000/mm3. This project's dataset
+# stores wbc_max in K/uL (thousands of cells per microliter), so
+# 12,000/mm3 = 12 K/uL and 4,000/mm3 = 4 K/uL.
+SIRS_WBC_HIGH_K_PER_UL = 12
+SIRS_WBC_LOW_K_PER_UL = 4
+
+# The 4 SIRS criteria (Bone et al. 1992): (criterion_key, feature_name, message).
+SIRS_CRITERIA = [
+    (
+        "temperature_abnormal",
+        "temperature_avg",
+        "Temperature above 38C or below 36C (SIRS criterion, Bone et al. 1992)",
+    ),
+    (
+        "heart_rate_high",
+        "heart_rate_avg",
+        "Heart rate above 90/min (SIRS criterion, Bone et al. 1992)",
+    ),
+    (
+        "respiratory_rate_high",
+        "respiratory_rate_avg",
+        "Respiratory rate above 20/min (SIRS criterion, Bone et al. 1992)",
+    ),
+    (
+        "wbc_abnormal",
+        "wbc_max",
+        "White blood cell count above 12,000/mm3 or below 4,000/mm3 (SIRS criterion, Bone et al. 1992)",
+    ),
 ]
 
 
@@ -27,39 +63,35 @@ def get_number(patient_dict, feature_name):
     return value
 
 
+def is_criterion_met(criterion_key, value):
+    """Check a single SIRS criterion (Bone et al. 1992) against its cited threshold(s)."""
+    if criterion_key == "temperature_abnormal":
+        return value > SIRS_TEMPERATURE_HIGH_C or value < SIRS_TEMPERATURE_LOW_C
+    if criterion_key == "heart_rate_high":
+        return value > SIRS_HEART_RATE_MIN
+    if criterion_key == "respiratory_rate_high":
+        return value > SIRS_RESPIRATORY_RATE_MIN
+    if criterion_key == "wbc_abnormal":
+        return value > SIRS_WBC_HIGH_K_PER_UL or value < SIRS_WBC_LOW_K_PER_UL
+    return False
+
+
 def evaluate_rules(patient_dict):
-    """Apply all threshold rules and return the risk score and factor messages."""
-    risk_score = 0
+    """Evaluate the 4 SIRS criteria (Bone et al. 1992) for one patient.
+
+    Returns (criteria_met_count, factor_messages). A criterion with a
+    missing/non-numeric value is skipped (not counted as met or not met),
+    consistent with how missing data was already handled in this project.
+    """
+    criteria_met = 0
     factors = []
 
-    heart_rate_avg = get_number(patient_dict, "heart_rate_avg")
-    heart_rate_max = get_number(patient_dict, "heart_rate_max")
-    if (
-        heart_rate_avg is not None and heart_rate_avg >= 100
-    ) or (
-        heart_rate_max is not None and heart_rate_max >= 130
-    ):
-        risk_score += 1
-        factors.append("Heart rate is high")
-
-    for feature_name, operator, threshold, message in BASELINE_RULES:
-        if operator == "==":
-            value = str(patient_dict.get(feature_name, "")).strip().upper()
-            is_abnormal = value == str(threshold).upper()
-        else:
-            value = get_number(patient_dict, feature_name)
-
-            if value is None:
-                continue
-
-            is_abnormal = (
-                operator == ">=" and value >= threshold
-            ) or (
-                operator == "<=" and value <= threshold
-            )
-
-        if is_abnormal:
-            risk_score += 1
+    for criterion_key, feature_name, message in SIRS_CRITERIA:
+        value = get_number(patient_dict, feature_name)
+        if value is None:
+            continue
+        if is_criterion_met(criterion_key, value):
+            criteria_met += 1
             factors.append(message)
 
-    return risk_score, factors
+    return criteria_met, factors

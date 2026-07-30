@@ -27,13 +27,29 @@ The system automatically creates local SQLite storage at `data/software_system.d
 
 ## Dataset Provenance
 
-- Raw MIMIC files (e.g. `CHARTEVENTS.csv`, `LABEVENTS.csv`) are **not included** in this submission and are not processed by any code in this repository.
-- `data/patient_features_ai.csv` is a processed academic feature table used for model training and evaluation. It contains one row per ICU stay with the demographic, admission, physiology, and laboratory features listed above, plus the outcome label.
+- `data/patient_features_ai.csv` is a processed, ML-ready feature table derived from the **full MIMIC-III v1.4 dataset** provided by the course via a shared Google Drive folder (not a separate, smaller, or unofficial data source).
+- Source tables used to build the feature table: `PATIENTS.csv`, `ADMISSIONS.csv`, `ICUSTAYS.csv`, `CHARTEVENTS.csv`, `LABEVENTS.csv`, `D_ITEMS.csv`, and `D_LABITEMS.csv`.
+- Raw MIMIC-III files are **not included** in this repository/submission package, primarily because of size - `CHARTEVENTS.csv` alone is approximately 33GB. The processed feature table (`data/patient_features_ai.csv`) is included in its place and is what the software actually reads and trains on.
+- The submission package includes the processed feature table used by the prototype. The raw extraction script and raw MIMIC tables are not included.
 - Target label: `hospital_expire_flag` (used only for training/evaluation, never as a model input).
 - Excluded leakage/identifier columns (never used as model inputs): `subject_id`, `hadm_id`, `icustay_id`, `hospital_expire_flag`.
 - Missing values are not hand-filled; they are handled by the preprocessing/model pipeline (median imputation for numeric features, most-frequent imputation for categorical features, as implemented in `ml/train_ai_model.py`).
-- The submission package includes the processed feature table used by the prototype. The raw extraction script and raw MIMIC tables are not included.
 - Because this processed table is derived from restricted-access MIMIC-III data, it should remain course-limited/private and not be redistributed outside the academic submission in accordance with the applicable data-use terms.
+
+## Baseline Methodology
+
+Baseline uses the SIRS (Systemic Inflammatory Response Syndrome) criteria (Bone et al., 1992). See `baseline/risk_rules.py` for the 4 cited criteria and thresholds:
+
+1. Temperature > 38C or < 36C
+2. Heart rate > 90/min
+3. Respiratory rate > 20/min
+4. White blood cell count > 12,000/mm3 or < 4,000/mm3
+
+SIRS-positive is the standard clinical definition of 2 or more criteria met. This project maps criteria count to the existing Low/Medium/High scheme as: 0-1 criteria -> Low, 2 criteria -> Medium (SIRS-positive), 3-4 criteria -> High.
+
+Citation: Bone, R.C., Balk, R.A., Cerra, F.B., et al. (1992). "Definitions for sepsis and organ failure and guidelines for the use of innovative therapies in sepsis." *Chest*, 101(6), 1644-1655.
+
+The other clinical variables in this dataset (systolic blood pressure, creatinine, glucose, hemoglobin, SpO2, age, admission type) are **not** part of the official SIRS definition and are intentionally excluded from the baseline. They remain used by the trained ML model (all 13 input features) and by the separate "weighted risk assessor" stage inside the modular workflow (`agents/multi_agent_workflow.py`). That stage extends beyond SIRS with additional physiological and laboratory variables inspired by general ICU severity-scoring concepts (e.g., APACHE II, SOFA); its specific weights (1-3 per factor) reflect engineering judgment and are not calibrated against this dataset or drawn from a specific published scoring table. This is a stated limitation, not a validated clinical score.
 
 ## Real AI Components
 

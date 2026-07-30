@@ -104,6 +104,10 @@ def run_evaluation(csv_path="data/patient_features_ai.csv"):
     )
 
     evaluation_result = {
+        "baseline_method": (
+            "Baseline uses the SIRS (Systemic Inflammatory Response Syndrome) "
+            "criteria (Bone et al., 1992)."
+        ),
         "high_risk_detection": high_risk_metrics,
         "at_risk_detection": at_risk_metrics,
         "baseline_metrics": high_risk_metrics["baseline"],

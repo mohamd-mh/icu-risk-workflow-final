@@ -16,6 +16,16 @@
         detection treats only High as positive. At-risk detection treats both
         Medium and High as positive.
     </p>
+    <p class="info-box">
+        <strong>Baseline uses the SIRS (Systemic Inflammatory Response Syndrome)
+        criteria (Bone et al., 1992).</strong> SIRS-positive is defined as 2 or
+        more of 4 criteria (temperature &gt; 38C or &lt; 36C; heart rate &gt; 90/min;
+        respiratory rate &gt; 20/min; white blood cell count &gt; 12,000/mm3 or &lt; 4,000/mm3),
+        mapped here to Low (0-1 criteria), Medium (2 criteria, SIRS-positive), and
+        High (3-4 criteria). Citation: Bone, R.C., Balk, R.A., Cerra, F.B., et al.
+        (1992). "Definitions for sepsis and organ failure and guidelines for the
+        use of innovative therapies in sepsis." <em>Chest</em>, 101(6), 1644-1655.
+    </p>
 
     <h3>High-Risk Mortality Detection</h3>
     <div class="table-wrap">
@@ -254,10 +264,17 @@
     </div>
 
     <p>
-        The baseline is a simple unweighted pipeline. The modular agent-inspired
-        workflow extends it with data validation, weighted verification,
-        explanation, and a workflow trace, using a fixed sequence of specialized
-        rule-based components rather than autonomous multi-agent negotiation.
+        The baseline is the 4-criteria SIRS rule (Bone et al., 1992) described
+        above. The modular agent-inspired workflow extends it with data
+        validation, a separate weighted clinical scorer covering additional
+        physiological/laboratory variables beyond SIRS, verification,
+        explanation, and a workflow trace, using a fixed sequence of
+        specialized rule-based components rather than autonomous multi-agent
+        negotiation. The weighted scorer's factor weights reflect engineering
+        judgment inspired by general ICU severity-scoring concepts (e.g.,
+        APACHE II, SOFA) and are not calibrated against this dataset or drawn
+        from a specific published scoring table - a stated limitation, not a
+        validated clinical score.
     </p>
     <p>
         The AI model shows high recall but low precision, making the prototype
@@ -265,6 +282,14 @@
         autonomous clinical prediction. The main workflow contribution is
         transparency, traceability, documentation, and auditability. The
         system does not provide diagnosis or treatment advice.
+    </p>
+    <p>
+        The modular workflow's improvement over the SIRS baseline is real but
+        narrow: it affects only 1.5% of cases (15/1000), driven mainly by
+        escalation logic that flags co-occurring critical vital-sign patterns
+        in emergency admissions specifically - non-emergency cases show no
+        change at all. With only 15 affected rows, the exact magnitude should
+        not be treated as a stable, generalizable effect.
     </p>
 </section>
 {% endblock %}
