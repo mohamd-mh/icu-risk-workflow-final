@@ -18,15 +18,16 @@
     <section class="case-panel">
         <div class="section-heading">
             <span class="eyebrow">What It Is</span>
-            <h3>AI-Assisted ICU Risk Review System</h3>
+            <h3>AI-Assisted ICU Quality Review Workbench</h3>
         </div>
         <p>
             The software system is a Flask-based ICU stay review prototype. It
-            combines a dashboard, searchable case worklist, detailed assessment
+            combines a dashboard, searchable case library, case safety profile
             screen, trained supervised AI risk prediction model, explainable AI
-            output, interactive AI assistant, local review notes, and review
+            output, optional summary assistant, local review notes, and review
             history / audit trail.
         </p>
+        <p class="info-box">{{ safety_sentence }}</p>
     </section>
 
     <section class="case-panel">
@@ -47,8 +48,8 @@
             </article>
             <article class="guide-step-card">
                 <span>GEN</span>
-                <h4>Interactive AI Assistant</h4>
-                <p>Answers case-review questions using live LLM mode when configured or offline fallback mode otherwise.</p>
+                <h4>Review Summary Assistant</h4>
+                <p>Uses live LLM mode only when configured or a template-based offline summary otherwise.</p>
             </article>
         </div>
     </section>
@@ -59,7 +60,7 @@
             <h3>Run The Software System Locally</h3>
         </div>
         <pre class="command-block">git clone &lt;repo-url&gt;
-cd icu-risk-workflow
+cd Software_System
 python -m venv .venv
 source .venv/Scripts/activate
 pip install -r requirements.txt
@@ -74,17 +75,15 @@ python app.py</pre>
             <h3>How To Use The Software System</h3>
         </div>
         <ol class="guide-steps">
-            <li>Open the Software Home page.</li>
-            <li>Open the ICU Dashboard to view case counts and priority queue.</li>
-            <li>Open the ICU Case Worklist and filter cases.</li>
-            <li>Open an ICU Stay Assessment page.</li>
-            <li>Review baseline, multi-agent, AI prediction, explainability, and generated summary sections.</li>
-            <li>Ask the Interactive AI Assistant review-support questions.</li>
+            <li>Open the Dashboard to view case counts and active queue work.</li>
+            <li>Open the Case Library and filter or search cases.</li>
+            <li>Open a Case Safety Profile.</li>
+            <li>Review AI risk, SIRS-style screening, supporting analytics, and the review-support summary.</li>
             <li>Save review documentation and inspect the audit trail.</li>
         </ol>
         <div class="button-row">
             <a class="button-link" href="{{ url_for('software_home') }}">Go To Software Home</a>
-            <a class="button-link secondary" href="{{ url_for('icu_dashboard') }}">Open Dashboard</a>
+            <a class="button-link secondary" href="{{ url_for('software_home') }}">Open Dashboard</a>
             <a class="button-link secondary" href="{{ url_for('user_guide') }}">Open User Guide</a>
         </div>
     </section>

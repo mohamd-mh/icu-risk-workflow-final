@@ -2737,3 +2737,343 @@ button:hover, .button-link:hover { background: var(--ui-blue-dark); border-color
     .form-submit-row { align-items: stretch; flex-direction: column; }
     .form-submit-row button, .form-submit-row .button-link { width: 100%; }
 }
+
+/* Workbench product layer. */
+.dashboard-page .workflow-hero,
+.case-library-page .page-header-modern,
+.review-queue-page .page-header-modern,
+.case-assessment-screen .page-header-modern,
+.case-safety-ticket-page .page-header-modern,
+.ai-risk-engine-page .page-header-modern,
+.results-validation-page .page-header-modern {
+    background: linear-gradient(135deg, #f8fbff 0%, #edf8f7 100%);
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+    margin: 22px 0;
+}
+
+.kpi-card {
+    min-height: 150px;
+    border-left: 4px solid #2f80ed;
+}
+
+.kpi-card strong {
+    font-size: clamp(30px, 3vw, 42px);
+}
+
+.dashboard-two-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.distribution-list,
+.activity-list {
+    display: grid;
+    gap: 10px;
+}
+
+.distribution-list div,
+.activity-list div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #e1e9f2;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.activity-list div {
+    display: grid;
+    justify-content: stretch;
+}
+
+.activity-list span {
+    color: #607086;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.quick-action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.quick-action-grid .button-link {
+    justify-content: center;
+    text-align: center;
+}
+
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 18px 0;
+    color: var(--ui-muted);
+    font-weight: 700;
+}
+
+.page-count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 7px 12px;
+    color: #3e5068;
+    border: 1px solid #dbe3ed;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 13px;
+}
+
+.disabled-link {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.risk-unknown,
+.risk-unavailable,
+.screening-unknown {
+    color: #475569;
+    background: #e5e7eb;
+}
+
+.screening-positive {
+    color: #8a1f11;
+    background: #ffd9d2;
+}
+
+.screening-negative {
+    color: #0f5132;
+    background: #c9f2dd;
+}
+
+.priority-low {
+    color: #0f5132;
+    background: #c9f2dd;
+}
+
+.priority-urgent {
+    color: #8a1f11;
+    background: #ffd9d2;
+}
+
+.status-new,
+.status-in-review,
+.status-closed,
+.status-archived {
+    color: #334e68;
+    background: #e6edf5;
+}
+
+.case-library-table {
+    min-width: 1120px;
+}
+
+.review-queue-table,
+.dashboard-queue-table {
+    min-width: 1180px;
+}
+
+.analytics-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.case-safety-ticket-page .detail-grid,
+.review-ticket-page .detail-grid,
+.case-assessment-screen .detail-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.case-safety-ticket-page .detail-grid strong,
+.review-ticket-page .detail-grid strong,
+.case-assessment-screen .detail-grid strong {
+    overflow-wrap: anywhere;
+}
+
+.page-header-modern {
+    padding: clamp(18px, 2vw, 26px);
+    margin-bottom: 16px;
+}
+
+.page-header-modern h2 {
+    margin-bottom: 6px;
+}
+
+.page-header-modern p {
+    margin-bottom: 0;
+}
+
+.safety-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 16px;
+    padding: 9px 12px;
+    color: #475569;
+    border: 1px solid #dbe3ed;
+    border-left: 3px solid #0891b2;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.safety-strip strong {
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.top-attention-panel {
+    border-left: 4px solid #0891b2;
+}
+
+.recommended-action-panel {
+    border-color: rgba(8, 145, 178, 0.34);
+    border-left: 5px solid #0891b2;
+    background: #f8fcfd;
+}
+
+.recommended-action-text,
+.recommended-action-mini {
+    margin: 0 0 14px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 750;
+    line-height: 1.45;
+}
+
+.recommended-action-mini {
+    padding: 13px 15px;
+    border: 1px solid #cde7ee;
+    border-radius: 10px;
+    background: #f0fbfd;
+}
+
+.ai-triage-summary {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.ai-triage-summary div {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #dbe3ed;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.ai-triage-summary span {
+    display: block;
+    margin-bottom: 6px;
+    color: #607086;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.ai-triage-summary strong {
+    display: block;
+    color: #172033;
+    font-size: 14px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.recommended-action-cell {
+    min-width: 230px;
+    max-width: 340px;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.triage-cell {
+    min-width: 180px;
+}
+
+.action-toolbar {
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.action-toolbar form {
+    margin: 0;
+}
+
+.danger-action {
+    color: #8a1f11 !important;
+    border-color: #f5b8ad !important;
+    background: #fff5f2 !important;
+}
+
+.danger-action:hover {
+    color: #fff !important;
+    background: #b42318 !important;
+    border-color: #b42318 !important;
+}
+
+.identity-note {
+    margin-top: 14px;
+}
+
+.review-ticket-page .ticket-summary-panel {
+    border-left: 4px solid #2563eb;
+}
+
+.compact-dashboard-section {
+    margin-top: 18px;
+}
+
+.review-queue-page .action-column,
+.dashboard-page .action-column,
+.case-library-page .action-column {
+    min-width: 250px;
+    width: 250px;
+}
+
+.review-queue-page .action-column,
+.dashboard-page .action-column,
+.case-library-page .action-column {
+    white-space: normal;
+}
+
+.review-queue-page .action-column .inline-form,
+.dashboard-page .action-column .inline-form,
+.case-library-page .action-column .inline-form {
+    margin: 2px 0;
+}
+
+@media (max-width: 1280px) {
+    .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .case-safety-ticket-page .detail-grid,
+    .review-ticket-page .detail-grid,
+    .case-assessment-screen .detail-grid,
+    .ai-triage-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 920px) {
+    .dashboard-two-column,
+    .analytics-card-grid { grid-template-columns: 1fr; }
+    .pagination-bar { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 680px) {
+    .kpi-grid,
+    .quick-action-grid,
+    .case-safety-ticket-page .detail-grid,
+    .review-ticket-page .detail-grid,
+    .case-assessment-screen .detail-grid,
+    .ai-triage-summary { grid-template-columns: 1fr; }
+    .safety-strip { align-items: flex-start; flex-direction: column; }
+}

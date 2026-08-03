@@ -2,15 +2,17 @@
 
 {% block content %}
 <section class="page-section wide-section new-case-page">
-    <div class="page-header page-header-modern"><div><span class="eyebrow">Quality Review Intake</span><h2>Add New ICU Case for Quality Review</h2><p>Enter available case values and run AI-supported review analysis. Missing values are allowed and handled by the model pipeline. The result supports quality review only, not diagnosis.</p></div></div>
+    <div class="page-header page-header-modern"><div><span class="eyebrow">Quality Review Intake</span><h2>Create Review Ticket</h2><p>Create a local manual review case and run AI-supported review analysis.</p></div></div>
 
     <div class="new-case-layout">
     <section class="case-panel new-case-form-panel">
+        <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
         <div class="info-box">Missing values are allowed. The model pipeline handles missing inputs using imputation. The result supports quality review only, not diagnosis.</div>
         <div class="info-box">Manual review cases are local submissions entered into this software for AI-supported quality review. They do not modify the original processed ICU dataset and do not create real hospital ICU stays.</div>
         {% if errors %}<div class="warning-box">Please fix the highlighted field(s) below before running the analysis.</div>{% endif %}
         <form method="post" class="review-form full-review-form manual-case-form">
             <fieldset class="form-input-card"><legend>Basic Context</legend><div class="form-card-grid">
+                <label>Local Review Reference<input type="text" name="local_review_reference" autocomplete="off" value="{{ form_values.get('local_review_reference', '') }}" placeholder="ICU-QA-2026-017, Ward report case 4, External spreadsheet row 12"></label>
                 <label>Gender<select name="gender">
                     <option value="M" {% if form_values.get('gender') == 'M' %}selected{% endif %}>M</option>
                     <option value="F" {% if form_values.get('gender') == 'F' %}selected{% endif %}>F</option>
@@ -28,26 +30,29 @@
             <fieldset class="form-input-card"><legend>Laboratory Values</legend><div class="form-card-grid">
                 {% for field,label in [('creatinine_max','Creatinine max'),('glucose_max','Glucose max'),('wbc_max','WBC max'),('hemoglobin_min','Hemoglobin min')] %}<label>{{ label }}<input type="text" inputmode="decimal" autocomplete="off" class="{% if errors.get(field) %}field-invalid{% endif %}" name="{{ field }}" value="{{ form_values.get(field, '') }}">{% if errors.get(field) %}<span class="field-error">{{ errors[field] }}</span>{% endif %}</label>{% endfor %}
             </div></fieldset>
-            <div class="form-submit-row"><button type="submit">Run AI Review Analysis</button><a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a></div>
+            <div class="form-submit-row"><button type="submit">Create Review Ticket</button><a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a></div>
         </form>
     </section>
     <aside class="case-panel new-case-helper-panel">
         <div class="section-heading"><span class="eyebrow">Review workflow</span><h3>What happens next?</h3></div>
-        <ol class="helper-steps"><li>The model aligns entered values to the input schema.</li><li>Missing values are handled by imputation.</li><li>The AI model estimates risk probability.</li><li>The system shows confidence, similar cases, and review context.</li><li>The coordinator can create or open a review item.</li></ol>
-        <div class="info-box"><strong>Safety note:</strong> This is review support only, not diagnosis or treatment advice.</div>
+        <ol class="helper-steps"><li>The model aligns entered values to the input schema.</li><li>Missing values are handled by imputation.</li><li>The AI model estimates risk probability.</li><li>The system shows confidence, similar cases, and review context.</li><li>The coordinator opens the created review ticket and documents next steps.</li></ol>
+        <div class="safety-strip"><strong>Identity:</strong> Do not enter patient names, real MRNs, or private identity fields.</div>
     </aside>
     </div>
 
     {% if result %}
     <section class="case-panel ai-assessment-panel">
-        <div class="section-heading"><span class="eyebrow">AI Summary</span><h3>Manual Review Case #{{ result.manual_case.id }}</h3></div>
+        <div class="section-heading"><span class="eyebrow">Ticket Created</span><h3>Manual Review Case #{{ result.manual_case.id }}</h3></div>
         <div class="summary-grid compact-summary">
-            <div class="summary-card"><span>AI Risk</span><strong>{{ result.ai_prediction.ai_risk_level }}</strong></div>
-            <div class="summary-card"><span>Probability</span><strong>{{ result.ai_prediction.risk_probability }}</strong></div>
-            <div class="summary-card"><span>Confidence</span><strong>{{ result.uncertainty.confidence_label if result.uncertainty.available else 'Not available' }}</strong></div>
-            <div class="summary-card"><span>Suggested Review Priority</span><strong>{{ result.review_item.priority }}</strong></div>
+            <div class="summary-card"><span>Local Review Reference</span><strong>{{ result.manual_case.local_review_reference or 'Not provided' }}</strong></div>
+            <div class="summary-card risk-card-{{ result.ai_prediction.ai_risk_level|lower }}"><span>AI Risk</span><strong>{{ result.ai_prediction.ai_risk_level }}</strong></div>
+            <div class="summary-card"><span>Probability</span><strong>{% if result.ai_prediction.available %}{{ "%.1f"|format(result.ai_prediction.risk_probability * 100) }}%{% else %}Not available{% endif %}</strong></div>
+            <div class="summary-card"><span>SIRS Screening</span><strong>{{ result.sirs_screening }}</strong></div>
+            <div class="summary-card"><span>Confidence / Data Quality</span><strong>{{ result.uncertainty.confidence_label if result.uncertainty.available else 'Not available' }} / Manual</strong></div>
+            <div class="summary-card"><span>Suggested Review Priority</span><strong>{{ result.suggested_review_priority }}</strong></div>
         </div>
-        <div class="button-row"><a class="button-link" href="{{ url_for('review_item_detail', item_id=result.review_item.id) }}">Open Review Item</a><a class="button-link secondary" href="{{ url_for('new_case') }}">Add Another Case</a><a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a></div>
+        <div class="recommended-action-mini"><strong>Recommended Coordinator Action:</strong> {{ result.recommended_action }}</div>
+        <div class="button-row"><a class="button-link" href="{{ url_for('review_item_detail', item_id=result.review_item.id) }}">Open Created Review Ticket</a><a class="button-link secondary" href="{{ url_for('new_case') }}">Add Another Manual Case</a><a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a></div>
         <div class="advanced-result-grid">
             <details class="collapsible-section"><summary>Similar Cases</summary><p>{% if result.similar_cases.available %}{{ result.similar_cases.summary.similar_cases_found }} similar cases were retrieved for review context.{% else %}Not available{% endif %}</p></details>
             <details class="collapsible-section"><summary>Cluster Context</summary><p>{% if result.cluster.available %}Assigned cluster: {{ result.cluster.cluster_id }}.{% else %}Not available{% endif %}</p></details>

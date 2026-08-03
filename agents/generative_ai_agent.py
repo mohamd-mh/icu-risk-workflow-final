@@ -1,7 +1,7 @@
 ﻿"""Optional live generative AI assistant for ICU case review support.
 
 The assistant uses a real LLM only when LLM_API_KEY is configured. Without a
-key, it generates a structured offline explanation from the local model outputs.
+key, it returns a template-based offline summary from local model outputs.
 """
 
 from __future__ import annotations
@@ -13,11 +13,11 @@ import urllib.request
 from typing import Any
 
 SAFE_REFUSAL = (
-    "This academic prototype supports case review and explanation only. "
-    "It does not provide diagnosis, medication, or treatment recommendations. "
+    "This system supports quality-review prioritization and documentation only. "
+    "It does not provide diagnosis, treatment, or medication recommendations. "
     "Please consult qualified clinical staff for medical decisions."
 )
-OFFLINE_MODE_NOTE = "Offline generated summary from local model outputs; not live LLM output."
+OFFLINE_MODE_NOTE = "Template-based offline summary from local model outputs; not live LLM output."
 DEFAULT_API_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_MODEL = "gpt-4o-mini"
 UNSAFE_TERMS = [
@@ -51,6 +51,8 @@ ALLOWED_TERMS = [
     "uncertain",
     "confidence",
     "baseline",
+    "sirs",
+    "flagged",
     "draft",
     "note",
     "trained",
@@ -125,7 +127,7 @@ def _baseline_text(ai_prediction: dict[str, Any], baseline_result: dict[str, Any
     if not baseline_result:
         return f"The AI model classified the case as {ai_level}. Baseline comparison is not available."
     return (
-        f"The AI model classified the case as {ai_level}. The baseline rule result is "
+        f"The AI model classified the case as {ai_level}. The SIRS-style screening result is "
         f"{baseline_result.get('risk_level', 'not available')} with score "
         f"{baseline_result.get('risk_score', 'not available')}. Use this comparison as review context."
     )
@@ -245,13 +247,13 @@ def answer_case_question(
     if is_unsafe_question(question):
         return SAFE_REFUSAL
     if not is_supported_question(question):
-        return "Please ask about AI risk explanation, missing data, similar cases, cluster context, anomaly score, uncertainty, baseline comparison, model training/evaluation, workflow guidance, or reviewer note draft."
+        return "Please ask about AI risk explanation, why the case was flagged, missing data, similar cases, cluster context, anomaly score, uncertainty, AI vs SIRS comparison, model training/evaluation, workflow guidance, or reviewer note draft."
 
     if not os.getenv("LLM_API_KEY"):
         lowered = question.lower()
         if "missing" in lowered:
             return f"{OFFLINE_MODE_NOTE} {_missing_feature_text(explainability)}"
-        if "baseline" in lowered or "compare" in lowered:
+        if "baseline" in lowered or "sirs" in lowered or "compare" in lowered:
             return f"{OFFLINE_MODE_NOTE} {_baseline_text(ai_prediction, baseline_result)}"
         if "draft" in lowered or "note" in lowered:
             return (

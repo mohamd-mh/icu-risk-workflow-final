@@ -1,4 +1,4 @@
-# AI-Assisted ICU Quality Review System
+# AI-Assisted ICU Quality Review Workbench
 
 This Software_System deliverable is a standalone academic information system for an ICU Quality & Patient Safety Coordinator.
 
@@ -10,7 +10,7 @@ The system helps the user prioritize ICU case review, document notes, track stat
 
 ## Safety Scope
 
-Academic quality-review and documentation prototype only. It does not diagnose, prescribe medication, recommend treatment, or replace qualified clinical staff.
+This system supports quality-review prioritization and documentation only. It does not provide diagnosis, treatment, or medication recommendations.
 
 ## Local Storage
 
@@ -63,8 +63,8 @@ The other clinical variables in this dataset (systolic blood pressure, creatinin
 - KMeans clustering
 - IsolationForest anomaly detection
 - Uncertainty estimation using probability, entropy, threshold distance, and data quality
-- Optional live generative AI with `LLM_API_KEY`
-- AI Model Report using saved metadata, transparency information, and real metrics
+- Optional live LLM summary only when `LLM_API_KEY` is configured; otherwise a template-based offline summary is used
+- AI Risk Engine page using saved metadata, transparency information, and real metrics
 
 ## Workflow Design Note
 
@@ -76,6 +76,16 @@ uncertainty estimation, and review documentation. The "baseline" and
 only real LLM call in the system is the optional generative-AI case-summary
 assistant, which is used only when `LLM_API_KEY` is configured and otherwise
 falls back to an offline templated summary built from local model outputs.
+
+## Final Navigation
+
+1. Dashboard
+2. Review Queue
+3. Case Library
+4. Create Review Ticket
+5. AI Risk Engine
+6. Model Validation
+7. User Guide
 
 ## Run
 
@@ -112,15 +122,17 @@ Open `http://127.0.0.1:5000/`.
 /review-queue
 /new-case
 /ai-evaluation
+/ai-risk-engine
+/results
 /user-guide
 ```
 
 ## CRUD Workflow
 
 - Create review items from dataset cases using Add to Review Queue.
-- Create manual case submissions from Add New Case.
-- Read and filter queue items in the Quality Review Queue.
-- Update status, review priority, and assigned coordinator from Review Item pages.
+- Create manual case submissions from Create Review Ticket.
+- Read and filter queue items in the Review Queue.
+- Update status, review priority, and assigned coordinator from Review Ticket pages.
 - Add review notes and follow-up documentation.
 - Archive/delete local workflow records. Delete requests archive records by default and never delete dataset rows.
 - Review audit events for traceability and audit preparation.

@@ -2,59 +2,91 @@
 
 {% block content %}
 <section class="page-section wide-section case-assessment-screen">
-    <h1 class="print-only">ICU Stay Assessment Summary</h1>
+    <h1 class="print-only">Case Safety Profile Summary</h1>
 
     <div class="page-header page-header-modern print-hide">
         <div>
-            <span class="eyebrow">Coordinator Review View</span>
-            <h2>Coordinator Review Summary</h2>
+            <span class="eyebrow">Case Safety Profile</span>
+            <h2>Case Safety Profile</h2>
             <p>Focused review page for {{ case.case_label }}.</p>
-            <p class="page-guidance">This page helps the ICU Quality &amp; Patient Safety Coordinator understand why a case was prioritized, document review notes, and track follow-up. It is not a clinical decision or treatment recommendation page.</p>
+            <p class="page-guidance">AI output supports prioritization and review documentation only.</p>
         </div>
     </div>
 
     {% if saved %}<div class="success-box print-hide">Review saved. Values will remain available after refresh.</div>{% endif %}
-    <div class="info-box">Academic prototype for review support and explanation only. It does not provide diagnosis, medication, or treatment recommendations.</div>
+    <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
 
     <section class="case-panel case-header-panel case-summary-banner">
         <div class="case-title-row">
             <div><span class="eyebrow">Case ID</span><h3>{{ case.case_label }}</h3><p>Subject {{ case.subject_id }} / HADM {{ case.hadm_id }} / ICU Stay {{ case.icustay_id }}</p></div>
             <div class="status-stack">
                 <span class="badge risk-{{ case.ai_prediction_result.ai_risk_level|default(case.risk_level)|lower }}">AI: {{ case.ai_prediction_result.ai_risk_level|default('Not available') }}</span>
+                <span class="badge screening-{{ case.sirs_screening_key }}">{{ case.sirs_screening }}</span>
                 <span class="badge quality-{{ case.data_quality|lower }}">{{ case.data_quality }} Data</span>
                 <span class="badge status status-{{ case.review_status|lower|replace(' ', '-') }}">{{ case.review_status }}</span>
                 <span class="badge priority priority-{{ case.priority|lower|replace(' ', '-') }}">{{ case.priority }}</span>
             </div>
         </div>
         <div class="detail-grid">
+            <div><span>Source</span><strong><span class="badge case-type">Dataset</span> Processed ICU Dataset</strong></div>
             <div><span>AI Risk Level</span><strong>{{ case.ai_prediction_result.ai_risk_level|default('Not available') }}</strong></div>
             <div><span>AI Probability</span><strong>{% if case.ai_prediction_result.available %}{{ "%.1f"|format(case.ai_prediction_result.risk_probability * 100) }}%{% else %}Not available{% endif %}</strong></div>
+            <div><span>SIRS Screening</span><strong>{{ case.sirs_screening }} ({{ case.sirs_criteria_met }} of 4)</strong></div>
             <div><span>Confidence</span><strong>{% if case.uncertainty_result.available %}{{ case.uncertainty_result.confidence_label }}{% else %}Not available{% endif %}</strong></div>
-            <div><span>Current Review Status</span><strong>{{ case.review_status }}</strong></div>
-            <div><span>Suggested Review Priority</span><strong>{{ case.priority }}</strong></div>
+            <div><span>Review Priority</span><strong>{{ case.priority }}</strong></div>
+            <div><span>Status</span><strong>{{ case.review_status }}</strong></div>
+            <div><span>Coordinator</span><strong>{{ case.reviewer or 'Unassigned' }}</strong></div>
             <div><span>Data Quality</span><strong>{{ case.data_quality }}</strong></div>
+        </div>
+        <p class="table-subtext identity-note">This workbench uses de-identified ICU stay records. In a real deployment, the hospital would connect the local review reference to its internal EHR identity system.</p>
+    </section>
+
+    <section class="case-panel recommended-action-panel print-hide">
+        <div class="section-heading"><span class="eyebrow">Recommended Coordinator Action</span><h3>Recommended Coordinator Action</h3></div>
+        <p class="recommended-action-text">{{ case.recommended_action }}</p>
+        <div class="ai-triage-summary">
+            <div><span>AI Risk Tier</span><strong>{{ case.ai_prediction_result.ai_risk_level|default('Not available') }}</strong></div>
+            <div><span>AI Probability</span><strong>{% if case.ai_prediction_result.available %}{{ "%.1f"|format(case.ai_prediction_result.risk_probability * 100) }}%{% else %}Not available{% endif %}</strong></div>
+            <div><span>SIRS Screening</span><strong>{{ case.sirs_screening }}</strong></div>
+            <div><span>Confidence / Data Quality</span><strong>{% if case.uncertainty_result.available %}{{ case.uncertainty_result.confidence_label }} / {{ case.data_quality }}{% else %}{{ case.data_quality }}{% endif %}</strong></div>
+            <div><span>Main Model Signals</span><strong>{{ case.main_model_signal_text }}</strong></div>
+            <div><span>Suggested Review Priority</span><strong>{{ case.suggested_review_priority }}</strong></div>
+        </div>
+        <h4>Why was this case flagged?</h4>
+        <p class="note-text">{{ case.why_flagged_summary }}</p>
+        <div class="button-row action-toolbar">
+            {% if linked_review_item %}
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=linked_review_item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_in_review"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit">Mark In Review</button></form>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=linked_review_item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_follow_up"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="button-link secondary">Mark Needs Follow-up</button></form>
+                <a class="button-link secondary" href="{{ url_for('review_item_detail', item_id=linked_review_item.id) }}#note">Add Note</a>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=linked_review_item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="button-link secondary">Mark Reviewed</button></form>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=linked_review_item.id) }}" class="inline-form"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="button-link secondary danger-action">Archive</button></form>
+            {% else %}
+                <form method="post" action="{{ url_for('add_dataset_case_to_review_queue', icustay_id=case.icustay_id) }}" class="inline-form"><input type="hidden" name="next" value="ticket"><button type="submit">Create Review Ticket</button></form>
+            {% endif %}
         </div>
     </section>
 
     <section class="case-panel main-actions-panel print-hide">
         <div class="section-heading"><span class="eyebrow">Next Step</span><h3>Main Actions</h3></div>
-        <div class="button-row"><a class="button-link secondary" href="{{ url_for('review_queue') }}">Quality Review Queue</a><a class="button-link secondary" href="{{ back_to_worklist_url }}">Case Library</a>{% if linked_review_item %}<a class="button-link" href="{{ url_for('review_item_detail', item_id=linked_review_item.id) }}">View Review Item</a>{% else %}<form method="post" action="{{ url_for('add_dataset_case_to_review_queue', icustay_id=case.icustay_id) }}" class="inline-form"><button type="submit" class="button-link">Add to Review Queue</button></form>{% endif %}<button type="button" class="button-link print-button" onclick="window.print()">Print Summary</button></div>
+        <div class="button-row"><a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a><a class="button-link secondary" href="{{ back_to_worklist_url }}">Back to Case Library</a>{% if linked_review_item %}<a class="button-link" href="{{ url_for('review_item_detail', item_id=linked_review_item.id) }}">Open Review Ticket</a>{% else %}<form method="post" action="{{ url_for('add_dataset_case_to_review_queue', icustay_id=case.icustay_id) }}" class="inline-form"><input type="hidden" name="next" value="ticket"><button type="submit" class="button-link">Create Review Ticket</button></form>{% endif %}<button type="button" class="button-link print-button" onclick="window.print()">Print Summary</button></div>
     </section>
 
     <section class="case-panel ai-assessment-panel">
-        <div class="section-heading"><span class="eyebrow">Section 1</span><h3>AI Summary for Quality Review</h3><p class="section-lead">The trained supervised model outputs a probability, then maps it to Low, Medium, or High using transparent thresholds to support suggested review priority.</p></div>
+        <div class="section-heading"><span class="eyebrow">AI Risk Summary</span><h3>AI Risk Summary</h3><p class="section-lead">The trained supervised model outputs a probability, then maps it to Low, Medium, or High using transparent thresholds to support suggested review priority.</p></div>
         <div class="summary-grid compact-summary">
             <div class="summary-card"><span>Model</span><strong>{{ case.ai_prediction_result.model_name|default(ai_system_status.model_name) }}</strong></div>
             <div class="summary-card risk-card-{{ case.ai_prediction_result.ai_risk_level|default('low')|lower }}"><span>AI Risk</span><strong>{{ case.ai_prediction_result.ai_risk_level|default('Not available') }}</strong></div>
             <div class="summary-card"><span>Probability</span><strong>{% if case.ai_prediction_result.available %}{{ "%.1f"|format(case.ai_prediction_result.risk_probability * 100) }}%{% else %}Not available{% endif %}</strong></div>
             <div class="summary-card"><span>Confidence</span><strong>{% if case.uncertainty_result.available %}{{ case.uncertainty_result.confidence_label }}{% else %}Not available{% endif %}</strong></div>
-            <div class="summary-card"><span>Suggested Review Priority</span><strong>{{ case.priority }}</strong></div>
+            <div class="summary-card"><span>Suggested Review Priority</span><strong>{{ case.suggested_review_priority }}</strong></div>
         </div>
         <div class="info-box"><strong>How risk is determined:</strong> Low &lt; 33%, Medium 33-67%, High &gt;= 67%. The thresholds are transparent and configurable. The feature explanation shows what influenced the model output.</div>
-        <div class="info-box"><strong>Why these AI inputs?</strong> The AI model uses ICU physiology, laboratory, and admission-context variables that are common in ICU risk prediction settings. The system does not apply hand-written medical rules. The prediction is produced by the trained ML model and is used only for ICU quality review support.</div>
+        <div class="info-box"><strong>Why these AI inputs?</strong> The AI model uses ICU physiology, laboratory, demographic, and admission-context variables. The prediction is produced by the trained ML model and is used only for ICU quality review support.</div>
         {% if case.ai_missing_important_values %}
             <p class="warning-box">Data quality warning: prediction should be interpreted with caution because important AI model signals are missing: {% for feature in case.ai_missing_important_values %}{{ feature.display_name }}{% if not loop.last %}, {% endif %}{% endfor %}.</p>
         {% endif %}
+        <h4>Main Model Signals</h4>
         <div class="ai-feature-list">
             {% for feature in case.ai_explainability_result.top_features %}
                 {% if loop.index <= 3 %}
@@ -73,13 +105,13 @@
                 <p class="notice">No top-feature explanation is available for this case.</p>
             {% endfor %}
         </div>
-        <article class="ai-output-card ai-summary-card-wide"><h4>AI-Generated Review Support Summary</h4><p class="note-text">{{ case.ai_generated_summary }}</p></article>
+        <article class="ai-output-card ai-summary-card-wide"><h4>Review Support Summary</h4><p class="note-text">{{ case.ai_generated_summary }}</p></article>
         <p class="table-subtext">{{ case.ai_prediction_result.label_note }}</p>
         <p class="table-subtext">{{ case.ai_explainability_result.explanation_note }}</p>
     </section>
 
     <section class="case-panel print-hide review-panel-modern">
-        <div class="section-heading"><span class="eyebrow">Section 2</span><h3>Coordinator Actions / Review Documentation</h3><p class="section-lead">Set review priority and status, document follow-up, and maintain traceability.</p></div>
+        <div class="section-heading"><span class="eyebrow">Coordinator Notes</span><h3>Coordinator Actions / Review Documentation</h3><p class="section-lead">Set review priority and status, document follow-up, and maintain traceability.</p></div>
         <form method="post" class="review-form full-review-form">
             {% if return_to %}<input type="hidden" name="return_to" value="{{ return_to }}">{% endif %}
             <label>Review Status<select name="status">{% for status in review_statuses %}<option value="{{ status }}" {% if case.review_status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
@@ -91,7 +123,7 @@
     </section>
 
     <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Section 3</span><h3>Case Values</h3></div>
+        <div class="section-heading"><span class="eyebrow">Case Values</span><h3>Case Values</h3></div>
         <h4>Basic Context</h4>
         <div class="detail-grid">
             <div><span>Subject ID</span><strong>{{ case.subject_id }}</strong></div><div><span>HADM ID</span><strong>{{ case.hadm_id }}</strong></div><div><span>ICU Stay ID</span><strong>{{ case.icustay_id }}</strong></div><div><span>Age</span><strong>{{ "%.1f"|format(case.age) }}</strong></div><div><span>Gender</span><strong>{{ case.gender }}</strong></div><div><span>Admission Type</span><strong>{{ case.admission_type }}</strong></div>
@@ -101,14 +133,15 @@
     </section>
 
     <section class="case-panel">
-        <div class="section-heading"><span class="eyebrow">Section 4</span><h3>Advanced AI Details</h3><p class="section-lead">These details are generated from real ML/data algorithms and are provided for transparency.</p></div>
-        <details class="collapsible-section" open><summary>Similar Cases</summary>{% if case.similar_cases_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Similar cases found</span><strong>{{ case.similar_cases_result.summary.similar_cases_found }}</strong></div><div class="summary-card"><span>Historical mortality label %</span><strong>{{ case.similar_cases_result.summary.mortality_label_percentage if case.similar_cases_result.summary.mortality_label_percentage is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Average age</span><strong>{{ case.similar_cases_result.summary.average_age if case.similar_cases_result.summary.average_age is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Common admission type</span><strong>{{ case.similar_cases_result.summary.common_admission_type }}</strong></div></div><div class="table-container"><table class="worklist-table"><thead><tr><th>ICU Stay</th><th>Subject</th><th>Age</th><th>Admission Type</th><th>Similarity</th><th>Historical label</th></tr></thead><tbody>{% for similar in case.similar_cases_result.cases %}<tr><td>{{ similar.icustay_id }}</td><td>{{ similar.subject_id }}</td><td>{{ similar.age }}</td><td>{{ similar.admission_type }}</td><td>{{ similar.similarity_score }}</td><td>{{ similar.historical_outcome_label if similar.historical_outcome_label is not none else 'Not available' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="notice">{{ case.similar_cases_result.message }}</p>{% endif %}</details>
+        <div class="section-heading"><span class="eyebrow">Supporting AI Analytics</span><h3>Supporting AI Analytics</h3><p class="section-lead">These details are generated from real ML/data algorithms and are provided for transparency.</p></div>
+        <details class="collapsible-section" open><summary>SIRS-style Screening Baseline</summary><div class="summary-grid compact-summary"><div class="summary-card"><span>Screening</span><strong>{{ case.sirs_screening }}</strong></div><div class="summary-card"><span>Criteria met</span><strong>{{ case.sirs_criteria_met }} of 4</strong></div><div class="summary-card"><span>Mapped tier</span><strong>{{ case.baseline_result.risk_level }}</strong></div></div><p>{{ case.baseline_result.explanation }}</p><p class="table-subtext">This is a transparent screening flag for review context. It is not the trained AI model, not a diagnosis, and not a mortality prediction.</p></details>
+        <details class="collapsible-section"><summary>Similar Cases</summary>{% if case.similar_cases_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Similar cases found</span><strong>{{ case.similar_cases_result.summary.similar_cases_found }}</strong></div><div class="summary-card"><span>Historical mortality label %</span><strong>{{ case.similar_cases_result.summary.mortality_label_percentage if case.similar_cases_result.summary.mortality_label_percentage is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Average age</span><strong>{{ case.similar_cases_result.summary.average_age if case.similar_cases_result.summary.average_age is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Common admission type</span><strong>{{ case.similar_cases_result.summary.common_admission_type }}</strong></div></div><div class="table-container"><table class="worklist-table"><thead><tr><th>ICU Stay</th><th>Subject</th><th>Age</th><th>Admission Type</th><th>Similarity</th><th>Historical label</th></tr></thead><tbody>{% for similar in case.similar_cases_result.cases %}<tr><td>{{ similar.icustay_id }}</td><td>{{ similar.subject_id }}</td><td>{{ similar.age }}</td><td>{{ similar.admission_type }}</td><td>{{ similar.similarity_score }}</td><td>{{ similar.historical_outcome_label if similar.historical_outcome_label is not none else 'Not available' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="notice">{{ case.similar_cases_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Cluster Context</summary>{% if case.cluster_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Cluster ID</span><strong>{{ case.cluster_result.cluster_id }}</strong></div><div class="summary-card"><span>Cases in cluster</span><strong>{{ case.cluster_result.cases_in_cluster }}</strong></div><div class="summary-card"><span>Average AI probability</span><strong>{{ case.cluster_result.average_ai_probability if case.cluster_result.average_ai_probability is not none else 'Not available' }}</strong></div><div class="summary-card"><span>Historical mortality label %</span><strong>{{ case.cluster_result.historical_mortality_label_percentage if case.cluster_result.historical_mortality_label_percentage is not none else 'Not available' }}</strong></div></div><p class="note-text">{{ case.cluster_result.note }}</p>{% else %}<p class="notice">{{ case.cluster_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Anomaly Detection</summary>{% if case.anomaly_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Anomaly label</span><strong>{{ case.anomaly_result.label }}</strong></div><div class="summary-card"><span>Anomaly score</span><strong>{{ case.anomaly_result.anomaly_score }}</strong></div><div class="summary-card"><span>Dataset percentile</span><strong>{{ case.anomaly_result.score_percentile }}</strong></div></div><p class="note-text">{{ case.anomaly_result.explanation }}</p><p class="table-subtext">{{ case.anomaly_result.note }}</p>{% else %}<p class="notice">{{ case.anomaly_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Uncertainty Details</summary>{% if case.uncertainty_result.available %}<div class="summary-grid compact-summary"><div class="summary-card"><span>Confidence label</span><strong>{{ case.uncertainty_result.confidence_label }}</strong></div><div class="summary-card"><span>Probability entropy</span><strong>{{ case.uncertainty_result.probability_entropy }}</strong></div><div class="summary-card"><span>Nearest threshold distance</span><strong>{{ case.uncertainty_result.distance_from_nearest_threshold }}</strong></div><div class="summary-card"><span>Missing important features</span><strong>{{ case.uncertainty_result.missing_important_feature_count }}</strong></div></div><p class="warning-box">{{ case.uncertainty_result.data_completeness_warning }}</p><p class="note-text">{{ case.uncertainty_result.explanation }}</p>{% else %}<p class="notice">{{ case.uncertainty_result.message }}</p>{% endif %}</details>
         <details class="collapsible-section"><summary>Explainability Table</summary><div class="table-container"><table><thead><tr><th>Feature</th><th>Value</th><th>Importance</th><th>Interpretation</th></tr></thead><tbody>{% for feature in case.ai_explainability_result.top_features %}<tr><td>{{ feature.display_name }}</td><td>{{ feature.value if feature.value is not none else 'Missing' }}</td><td>{{ feature.importance }}</td><td>{{ feature.interpretation }}</td></tr>{% else %}<tr><td colspan="4">No explainability rows available.</td></tr>{% endfor %}</tbody></table></div></details>
         <details class="collapsible-section"><summary>Baseline vs. Modular Workflow Comparison</summary><div class="summary-grid compact-summary"><div class="summary-card"><span>Baseline Risk</span><strong>{{ case.baseline_result.risk_level }}</strong></div><div class="summary-card"><span>Baseline Score</span><strong>{{ case.baseline_result.risk_score }}</strong></div><div class="summary-card"><span>Modular Workflow Risk</span><strong>{{ case.multi_agent_result.final_risk_level }}</strong></div><div class="summary-card"><span>Weighted Score</span><strong>{{ case.multi_agent_result.weighted_score }}/{{ case.multi_agent_result.max_score }}</strong></div></div><p>{{ case.baseline_result.explanation }}</p><p>{{ case.multi_agent_result.explanation }}</p><h4>Workflow Trace</h4><ol>{% for step in case.multi_agent_result.workflow_trace %}<li>{{ step }}</li>{% endfor %}</ol></details>
-        <details class="collapsible-section print-hide"><summary>Interactive AI Assistant</summary><div class="interactive-ai-panel"><div class="ai-status-grid"><div><span>Assistant mode</span><strong>{{ ai_system_status.llm_assistant_mode }}</strong></div><div><span>Scope</span><strong>Review support and explanation</strong></div></div><p class="warning-box">The AI assistant is for academic review support only. It does not provide diagnosis, medication, or treatment recommendations.</p><form class="ai-assistant-form" data-endpoint="{{ url_for('icu_case_ai_assistant', icustay_id=case.icustay_id) }}"><label>Question<textarea name="question" rows="4" placeholder="Ask about AI risk, missing data, comparison, or a note draft."></textarea></label><div class="ai-quick-actions"><button type="button" data-question="Generate case summary">Generate case summary</button><button type="button" data-question="Why is this case {{ case.ai_prediction_result.ai_risk_level }} risk?">Why this risk?</button><button type="button" data-question="What data is missing?">What data is missing?</button><button type="button" data-question="Compare baseline and AI prediction">Compare approaches</button><button type="button" data-question="Generate reviewer note draft">Draft note</button></div><button type="submit">Ask AI</button></form><div class="ai-assistant-output" aria-live="polite"><span class="table-subtext">AI assistant answer will appear here.</span></div></div></details>
+        <details class="collapsible-section print-hide"><summary>AI Review Support Assistant</summary><div class="interactive-ai-panel"><div class="ai-status-grid"><div><span>Assistant mode</span><strong>{% if ai_system_status.generative_ai_status == 'configured' %}Live LLM mode{% else %}Offline template mode{% endif %}</strong></div><div><span>Scope</span><strong>Review support and explanation</strong></div></div><p class="warning-box">{{ safety_sentence }}</p><form class="ai-assistant-form" data-endpoint="{{ url_for('icu_case_ai_assistant', icustay_id=case.icustay_id) }}"><label>Question<textarea name="question" rows="4" placeholder="Ask about AI risk, missing data, comparison, or a note draft."></textarea></label><div class="ai-quick-actions"><button type="button" data-question="Generate case summary">Generate case summary</button><button type="button" data-question="Why was this case flagged?">Why was this case flagged?</button><button type="button" data-question="What data is missing?">What data is missing?</button><button type="button" data-question="Generate reviewer note draft">Draft review note</button><button type="button" data-question="Compare AI vs SIRS">Compare AI vs SIRS</button></div><button type="submit">Ask Assistant</button></form><div class="ai-assistant-output" aria-live="polite"><span class="table-subtext">Assistant answer will appear here.</span></div></div></details>
     </section>
 
     <section class="case-panel audit-trail-panel">

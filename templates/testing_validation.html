@@ -29,7 +29,7 @@
                 <h3>Route Checks</h3>
             </div>
             <div class="route-grid">
-                {% for route in ["/", "/icu-dashboard", "/icu-cases", "/user-guide", "/testing-validation", "/demo", "/results", "/system-architecture", "/dataset", "/team"] %}
+                {% for route in ["/", "/software", "/review-queue", "/new-case", "/icu-cases", "/icu-cases/200024", "/ai-evaluation", "/results", "/user-guide"] %}
                     <code>{{ route }}</code>
                 {% endfor %}
             </div>
@@ -102,7 +102,7 @@
                                 <tr>
                                     <th>Metric</th>
                                     <th>Baseline</th>
-                                    <th>Multi-Agent</th>
+                                    <th>Modular Workflow</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -138,8 +138,9 @@
                 <h3>Local Review Documentation</h3>
             </div>
             <p>
-                Local review data is stored in <code>{{ review_storage_path }}</code>
-                as local JSON storage for prototype traceability.
+                Local review data is stored in the SQLite workflow database
+                <code>data/software_system.db</code>; legacy dataset-note
+                storage remains available at <code>{{ review_storage_path }}</code>.
             </p>
             <ul>
                 <li>Review status</li>

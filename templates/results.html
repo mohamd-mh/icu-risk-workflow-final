@@ -1,295 +1,96 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-section">
-    <span class="eyebrow">Evaluation</span>
-    <h2>Results & Comparison</h2>
-    <p>
-        This evaluation uses the prepared ICU stay feature files for the
-        academic prototype. The AI model now prefers
-        <strong>patient_features_ai.csv</strong> when available, while the
-        existing research evaluation artifacts remain available for comparison.
-    </p>
-    <p>
-        Because the system outputs Low/Medium/High risk while the dataset label
-        is binary hospital mortality, we report two interpretations. High-risk
-        detection treats only High as positive. At-risk detection treats both
-        Medium and High as positive.
-    </p>
-    <p class="info-box">
-        <strong>Baseline uses the SIRS (Systemic Inflammatory Response Syndrome)
-        criteria (Bone et al., 1992).</strong> SIRS-positive is defined as 2 or
-        more of 4 criteria (temperature &gt; 38C or &lt; 36C; heart rate &gt; 90/min;
-        respiratory rate &gt; 20/min; white blood cell count &gt; 12,000/mm3 or &lt; 4,000/mm3),
-        mapped here to Low (0-1 criteria), Medium (2 criteria, SIRS-positive), and
-        High (3-4 criteria). Citation: Bone, R.C., Balk, R.A., Cerra, F.B., et al.
-        (1992). "Definitions for sepsis and organ failure and guidelines for the
-        use of innovative therapies in sepsis." <em>Chest</em>, 101(6), 1644-1655.
-    </p>
-
-    <h3>High-Risk Mortality Detection</h3>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Baseline Pipeline</th>
-                    <th>Multi-Agent Workflow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Accuracy</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.accuracy) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.accuracy) }}</td>
-                </tr>
-                <tr>
-                    <td>Precision</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.precision) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.precision) }}</td>
-                </tr>
-                <tr>
-                    <td>Recall</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.recall) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.recall) }}</td>
-                </tr>
-                <tr>
-                    <td>F1-score</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.baseline.f1) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.high_risk_detection.multi_agent.f1) }}</td>
-                </tr>
-            </tbody>
-        </table>
+<section class="page-section wide-section results-validation-page">
+    <div class="page-header page-header-modern">
+        <div>
+            <span class="eyebrow">Model Validation</span>
+            <h2>Model Validation</h2>
+            <p>Saved evaluation results for the academic prototype, with emphasis on precision/recall tradeoffs and workflow transparency.</p>
+        </div>
+        <a class="button-link secondary" href="{{ url_for('ai_evaluation') }}">AI Risk Engine</a>
     </div>
 
-    <h3>High-Risk Confusion Matrix</h3>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Baseline Pipeline</th>
-                    <th>Multi-Agent Workflow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>True Positive</td>
-                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.true_positive }}</td>
-                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.true_positive }}</td>
-                </tr>
-                <tr>
-                    <td>False Positive</td>
-                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.false_positive }}</td>
-                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.false_positive }}</td>
-                </tr>
-                <tr>
-                    <td>True Negative</td>
-                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.true_negative }}</td>
-                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.true_negative }}</td>
-                </tr>
-                <tr>
-                    <td>False Negative</td>
-                    <td>{{ evaluation_result.high_risk_detection.baseline.confusion_matrix.false_negative }}</td>
-                    <td>{{ evaluation_result.high_risk_detection.multi_agent.confusion_matrix.false_negative }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
 
-    <h3>At-Risk Detection</h3>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Baseline Pipeline</th>
-                    <th>Multi-Agent Workflow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Accuracy</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.accuracy) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.accuracy) }}</td>
-                </tr>
-                <tr>
-                    <td>Precision</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.precision) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.precision) }}</td>
-                </tr>
-                <tr>
-                    <td>Recall</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.recall) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.recall) }}</td>
-                </tr>
-                <tr>
-                    <td>F1-score</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.baseline.f1) }}</td>
-                    <td>{{ "%.2f"|format(evaluation_result.at_risk_detection.multi_agent.f1) }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">ML Model</span><h3>Saved AI Model Metrics</h3></div>
+        <div class="summary-grid dashboard-summary-grid">
+            <div class="summary-card metric-card-modern"><span>Accuracy</span><strong>{% if model_metrics.get('accuracy') is not none %}{{ "%.3f"|format(model_metrics.get('accuracy')) }}{% else %}<small>Not available</small>{% endif %}</strong></div>
+            <div class="summary-card metric-card-modern"><span>Precision</span><strong>{% if model_metrics.get('precision') is not none %}{{ "%.3f"|format(model_metrics.get('precision')) }}{% else %}<small>Not available</small>{% endif %}</strong></div>
+            <div class="summary-card metric-card-modern"><span>Recall</span><strong>{% if model_metrics.get('recall') is not none %}{{ "%.3f"|format(model_metrics.get('recall')) }}{% else %}<small>Not available</small>{% endif %}</strong></div>
+            <div class="summary-card metric-card-modern"><span>F1</span><strong>{% if model_metrics.get('f1_score') is not none %}{{ "%.3f"|format(model_metrics.get('f1_score')) }}{% else %}<small>Not available</small>{% endif %}</strong></div>
+            <div class="summary-card metric-card-modern"><span>ROC-AUC</span><strong>{% if model_metrics.get('roc_auc') is not none %}{{ "%.3f"|format(model_metrics.get('roc_auc')) }}{% else %}<small>Not available</small>{% endif %}</strong></div>
+        </div>
+        {% if model_metrics.get('confusion_matrix') %}
+        <h4>ML Confusion Matrix</h4>
+        <div class="table-container">
+            <table>
+                <thead><tr><th></th><th>Predicted 0</th><th>Predicted 1</th></tr></thead>
+                <tbody>
+                    <tr><th>Actual 0</th><td>{{ model_metrics.confusion_matrix[0][0] }}</td><td>{{ model_metrics.confusion_matrix[0][1] }}</td></tr>
+                    <tr><th>Actual 1</th><td>{{ model_metrics.confusion_matrix[1][0] }}</td><td>{{ model_metrics.confusion_matrix[1][1] }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        <p class="table-subtext">The saved model has high recall and low precision. That fits review prioritization better than autonomous clinical prediction.</p>
+    </section>
 
-    <h3>At-Risk Confusion Matrix</h3>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Baseline Pipeline</th>
-                    <th>Multi-Agent Workflow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>True Positive</td>
-                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.true_positive }}</td>
-                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.true_positive }}</td>
-                </tr>
-                <tr>
-                    <td>False Positive</td>
-                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.false_positive }}</td>
-                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.false_positive }}</td>
-                </tr>
-                <tr>
-                    <td>True Negative</td>
-                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.true_negative }}</td>
-                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.true_negative }}</td>
-                </tr>
-                <tr>
-                    <td>False Negative</td>
-                    <td>{{ evaluation_result.at_risk_detection.baseline.confusion_matrix.false_negative }}</td>
-                    <td>{{ evaluation_result.at_risk_detection.multi_agent.confusion_matrix.false_negative }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Baseline Comparison</span><h3>SIRS-style Baseline vs Modular Workflow</h3></div>
+        <p>{{ evaluation_result.baseline_method or 'Baseline uses the implemented SIRS-style screening criteria.' }}</p>
+        <p>Because the system outputs Low/Medium/High while the label is binary hospital mortality, the report includes High-risk detection and At-risk detection. High-risk detection treats only High as positive. At-risk detection treats Medium and High as positive.</p>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Metric</th><th>High-risk Baseline</th><th>High-risk Modular</th><th>At-risk Baseline</th><th>At-risk Modular</th></tr></thead>
+                <tbody>
+                    {% for metric in ['accuracy', 'precision', 'recall', 'f1'] %}
+                    <tr>
+                        <td>{{ metric|upper }}</td>
+                        <td>{{ "%.3f"|format(evaluation_result.high_risk_detection.baseline[metric]) }}</td>
+                        <td>{{ "%.3f"|format(evaluation_result.high_risk_detection.multi_agent[metric]) }}</td>
+                        <td>{{ "%.3f"|format(evaluation_result.at_risk_detection.baseline[metric]) }}</td>
+                        <td>{{ "%.3f"|format(evaluation_result.at_risk_detection.multi_agent[metric]) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-    <h3>Dataset Balance</h3>
-    <p>
-        Total rows: {{ evaluation_result.class_distribution.total_rows }}.
-        Survived: {{ evaluation_result.class_distribution.survived_count }}.
-        Died: {{ evaluation_result.class_distribution.died_count }}.
-        Mortality rate: {{ "%.2f"|format(evaluation_result.class_distribution.mortality_rate * 100) }}%.
-    </p>
-    <p>
-        The extracted subset is imbalanced, so accuracy alone is not enough.
-        Precision, recall, F1-score, and the confusion matrix give more context.
-    </p>
-    <p>
-        Data leakage check: {{ evaluation_result.data_leakage.leakage_check }}
-        (issues: {{ evaluation_result.data_leakage.leakage_issues_count }}).
-    </p>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Confusion Matrices</span><h3>Baseline / Workflow Confusion Matrices</h3></div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Evaluation</th><th>Pipeline</th><th>TP</th><th>FP</th><th>TN</th><th>FN</th></tr></thead>
+                <tbody>
+                    {% for section_key, section_label in [('high_risk_detection', 'High-risk'), ('at_risk_detection', 'At-risk')] %}
+                        {% for pipeline_key, pipeline_label in [('baseline', 'SIRS-style Baseline'), ('multi_agent', 'Modular Workflow')] %}
+                            {% set cm = evaluation_result[section_key][pipeline_key].confusion_matrix %}
+                            <tr><td>{{ section_label }}</td><td>{{ pipeline_label }}</td><td>{{ cm.true_positive }}</td><td>{{ cm.false_positive }}</td><td>{{ cm.true_negative }}</td><td>{{ cm.false_negative }}</td></tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-    <h3>Reliability Comparison</h3>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Baseline Pipeline</th>
-                    <th>Multi-Agent Workflow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Missing value handling</td>
-                    <td>Basic missing value handling</td>
-                    <td>Data quality Good/Partial/Poor</td>
-                </tr>
-                <tr>
-                    <td>Validator</td>
-                    <td>No separate validator</td>
-                    <td>Validator Agent</td>
-                </tr>
-                <tr>
-                    <td>Verifier</td>
-                    <td>No verifier</td>
-                    <td>Verifier Agent</td>
-                </tr>
-                <tr>
-                    <td>Workflow trace</td>
-                    <td>No workflow trace</td>
-                    <td>Workflow trace</td>
-                </tr>
-                <tr>
-                    <td>Uncertainty warnings</td>
-                    <td>No separate uncertainty warning</td>
-                    <td>Uncertainty warnings</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Interpretation</span><h3>Precision / Recall Tradeoff</h3></div>
+        <p>Accuracy alone is not enough because the hospital mortality label is imbalanced. Precision, recall, F1, and the confusion matrix should be read together.</p>
+        <p>The workflow contribution is transparency, traceability, documentation, auditability, and review context. The modular workflow should not be described as improving mortality prediction unless future metrics clearly demonstrate that claim.</p>
+        {% if evaluation_result.summary %}<p class="note-text">{{ evaluation_result.summary }}</p>{% endif %}
+    </section>
 
-    <h3>Transparency Comparison</h3>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Baseline Pipeline</th>
-                    <th>Multi-Agent Workflow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Explanation</td>
-                    <td>Basic explanation</td>
-                    <td>Explanation</td>
-                </tr>
-                <tr>
-                    <td>Contributing factors</td>
-                    <td>Contributing factors</td>
-                    <td>Weighted contributing factors</td>
-                </tr>
-                <tr>
-                    <td>Validation summary</td>
-                    <td>No validation summary</td>
-                    <td>Validation summary</td>
-                </tr>
-                <tr>
-                    <td>Verification notes</td>
-                    <td>No verification notes</td>
-                    <td>Verification notes</td>
-                </tr>
-                <tr>
-                    <td>Workflow trace</td>
-                    <td>No workflow trace</td>
-                    <td>Workflow trace</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <p>
-        The baseline is the 4-criteria SIRS rule (Bone et al., 1992) described
-        above. The modular agent-inspired workflow extends it with data
-        validation, a separate weighted clinical scorer covering additional
-        physiological/laboratory variables beyond SIRS, verification,
-        explanation, and a workflow trace, using a fixed sequence of
-        specialized rule-based components rather than autonomous multi-agent
-        negotiation. The weighted scorer's factor weights reflect engineering
-        judgment inspired by general ICU severity-scoring concepts (e.g.,
-        APACHE II, SOFA) and are not calibrated against this dataset or drawn
-        from a specific published scoring table - a stated limitation, not a
-        validated clinical score.
-    </p>
-    <p>
-        The AI model shows high recall but low precision, making the prototype
-        more suitable for review prioritization and transparency than
-        autonomous clinical prediction. The main workflow contribution is
-        transparency, traceability, documentation, and auditability. The
-        system does not provide diagnosis or treatment advice.
-    </p>
-    <p>
-        The modular workflow's improvement over the SIRS baseline is real but
-        narrow: it affects only 1.5% of cases (15/1000), driven mainly by
-        escalation logic that flags co-occurring critical vital-sign patterns
-        in emergency admissions specifically - non-emergency cases show no
-        change at all. With only 15 affected rows, the exact magnitude should
-        not be treated as a stable, generalizable effect.
-    </p>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Limitations</span><h3>Academic Prototype Limits</h3></div>
+        <ul class="check-list">
+            <li>Evaluation is based on a processed academic MIMIC-III feature table, not a live hospital deployment.</li>
+            <li>The target label is used only for training/evaluation and is excluded from model inputs.</li>
+            <li>The SIRS-style baseline is a transparent screening comparison, not diagnosis or mortality prediction.</li>
+            <li>Regenerating the processed dataset or retraining the model may change these metrics.</li>
+        </ul>
+    </section>
 </section>
 {% endblock %}

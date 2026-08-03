@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "data" / "software_system.db"
+DB_PATH = Path(os.getenv("ICU_REVIEW_DB_PATH", BASE_DIR / "data" / "software_system.db"))
 ACTIVE_STATUSES = ("New", "In Review", "Reviewed", "Needs Follow-up", "Closed")
 STATUSES = ["New", "In Review", "Reviewed", "Needs Follow-up", "Closed", "Archived"]
 PRIORITIES = ["Low", "Watch", "Urgent"]
@@ -37,6 +38,7 @@ def init_db() -> None:
                 subject_id TEXT,
                 hadm_id TEXT,
                 manual_case_id INTEGER,
+                local_review_reference TEXT DEFAULT '',
                 assigned_reviewer TEXT DEFAULT '',
                 status TEXT DEFAULT 'New',
                 priority TEXT DEFAULT 'Low',
@@ -48,6 +50,7 @@ def init_db() -> None:
             );
             CREATE TABLE IF NOT EXISTS manual_cases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                local_review_reference TEXT DEFAULT '',
                 gender TEXT,
                 age REAL,
                 admission_type TEXT,
@@ -85,6 +88,14 @@ def init_db() -> None:
             );
             """
         )
+        ensure_column(conn, "review_items", "local_review_reference", "TEXT DEFAULT ''")
+        ensure_column(conn, "manual_cases", "local_review_reference", "TEXT DEFAULT ''")
+
+
+def ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, column_definition: str) -> None:
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
+    if column_name not in columns:
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}")
 
 
 def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -117,13 +128,19 @@ def get_active_review_item_for_icustay(icustay_id: str) -> dict[str, Any] | None
     return row_to_dict(row)
 
 
-def create_dataset_review_item(case: dict[str, Any], assigned_reviewer: str = "") -> tuple[dict[str, Any], bool]:
+def normalize_priority(priority: str | None, fallback_risk_level: str | None = None) -> str:
+    if priority in PRIORITIES:
+        return priority
+    return default_priority_for_risk(fallback_risk_level)
+
+
+def create_dataset_review_item(case: dict[str, Any], assigned_reviewer: str = "", suggested_priority: str | None = None) -> tuple[dict[str, Any], bool]:
     existing = get_active_review_item_for_icustay(str(case.get("icustay_id")))
     if existing:
         return existing, False
     ai_result = case.get("ai_prediction_result", {})
     timestamp = now()
-    priority = default_priority_for_risk(ai_result.get("ai_risk_level"))
+    priority = normalize_priority(suggested_priority, ai_result.get("ai_risk_level"))
     with connect() as conn:
         cur = conn.execute(
             """
@@ -143,7 +160,7 @@ def create_dataset_review_item(case: dict[str, Any], assigned_reviewer: str = ""
 def create_manual_case(case_values: dict[str, Any], ai_result: dict[str, Any]) -> dict[str, Any]:
     timestamp = now()
     fields = [
-        "gender", "age", "admission_type", "heart_rate_avg", "heart_rate_max", "systolic_bp_avg",
+        "local_review_reference", "gender", "age", "admission_type", "heart_rate_avg", "heart_rate_max", "systolic_bp_avg",
         "respiratory_rate_avg", "temperature_avg", "spo2_avg", "creatinine_max", "glucose_max", "wbc_max", "hemoglobin_min",
     ]
     with connect() as conn:
@@ -152,20 +169,34 @@ def create_manual_case(case_values: dict[str, Any], ai_result: dict[str, Any]) -
             tuple(case_values.get(field) for field in fields) + (ai_result.get("ai_risk_level"), ai_result.get("risk_probability"), timestamp, timestamp),
         )
         manual_id = int(cur.lastrowid)
-    add_audit_event("manual_case", manual_id, "Created manual case submission", {"ai_risk_level": ai_result.get("ai_risk_level")})
+    add_audit_event(
+        "manual_case",
+        manual_id,
+        "Created manual case submission",
+        {"ai_risk_level": ai_result.get("ai_risk_level"), "local_review_reference": case_values.get("local_review_reference", "")},
+    )
     return get_manual_case(manual_id) or {"id": manual_id}
 
 
-def create_manual_review_item(manual_case: dict[str, Any], data_quality: str = "Manual") -> dict[str, Any]:
+def create_manual_review_item(manual_case: dict[str, Any], data_quality: str = "Manual", suggested_priority: str | None = None) -> dict[str, Any]:
     timestamp = now()
-    priority = default_priority_for_risk(manual_case.get("ai_risk_level"))
+    priority = normalize_priority(suggested_priority, manual_case.get("ai_risk_level"))
     with connect() as conn:
         cur = conn.execute(
             """
-            INSERT INTO review_items(source_type, manual_case_id, status, priority, ai_risk_level, ai_probability, data_quality, created_at, updated_at)
-            VALUES ('manual_case', ?, 'New', ?, ?, ?, ?, ?, ?)
+            INSERT INTO review_items(source_type, manual_case_id, local_review_reference, status, priority, ai_risk_level, ai_probability, data_quality, created_at, updated_at)
+            VALUES ('manual_case', ?, ?, 'New', ?, ?, ?, ?, ?, ?)
             """,
-            (manual_case.get("id"), priority, manual_case.get("ai_risk_level"), manual_case.get("ai_probability"), data_quality, timestamp, timestamp),
+            (
+                manual_case.get("id"),
+                manual_case.get("local_review_reference", ""),
+                priority,
+                manual_case.get("ai_risk_level"),
+                manual_case.get("ai_probability"),
+                data_quality,
+                timestamp,
+                timestamp,
+            ),
         )
         item_id = int(cur.lastrowid)
     add_audit_event("review_item", item_id, "Created review item from manual case", {"manual_case_id": manual_case.get("id")})
@@ -186,11 +217,17 @@ def list_review_items(filters: dict[str, str] | None = None) -> list[dict[str, A
         if filters.get(field):
             clauses.append(f"ri.{field} = ?")
             params.append(filters[field])
+    if filters.get("source_type"):
+        clauses.append("ri.source_type = ?")
+        params.append(filters["source_type"])
+    if filters.get("assigned_reviewer"):
+        clauses.append("ri.assigned_reviewer = ?")
+        params.append(filters["assigned_reviewer"])
     search = (filters.get("search") or "").strip()
     if search:
-        clauses.append("(ri.icustay_id LIKE ? OR ri.assigned_reviewer LIKE ? OR ri.subject_id LIKE ? OR ri.hadm_id LIKE ?)")
+        clauses.append("(ri.icustay_id LIKE ? OR ri.assigned_reviewer LIKE ? OR ri.subject_id LIKE ? OR ri.hadm_id LIKE ? OR ri.local_review_reference LIKE ?)")
         like = f"%{search}%"
-        params.extend([like, like, like, like])
+        params.extend([like, like, like, like, like])
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
     query = f"""
         SELECT ri.*, rn.note_text AS latest_note, rn.reviewer_name AS latest_note_reviewer, rn.created_at AS latest_note_at
@@ -199,7 +236,12 @@ def list_review_items(filters: dict[str, str] | None = None) -> list[dict[str, A
             SELECT id FROM review_notes WHERE review_item_id = ri.id ORDER BY created_at DESC, id DESC LIMIT 1
         )
         {where}
-        ORDER BY CASE ri.priority WHEN 'Urgent' THEN 0 WHEN 'Watch' THEN 1 ELSE 2 END, ri.updated_at DESC, ri.id DESC
+        ORDER BY
+            CASE ri.priority WHEN 'Urgent' THEN 0 WHEN 'Watch' THEN 1 ELSE 2 END,
+            CASE ri.ai_risk_level WHEN 'High' THEN 0 WHEN 'Medium' THEN 1 WHEN 'Low' THEN 2 ELSE 3 END,
+            CASE ri.status WHEN 'Needs Follow-up' THEN 0 WHEN 'New' THEN 1 WHEN 'In Review' THEN 2 WHEN 'Reviewed' THEN 3 WHEN 'Closed' THEN 4 ELSE 5 END,
+            ri.updated_at DESC,
+            ri.id DESC
     """
     with connect() as conn:
         return [dict(row) for row in conn.execute(query, params).fetchall()]
