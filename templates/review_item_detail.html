@@ -6,7 +6,7 @@
         <div>
             <span class="eyebrow">Review Ticket</span>
             <h2>Review Ticket #{{ item.id }}</h2>
-            <p>{{ item.case_display }} is tracked here for coordinator ownership, status, notes, and audit history.</p>
+            <p>{{ item.case_display }} is the coordinator workspace for checklist review, notes, summary preparation, handoff status, and audit history.</p>
         </div>
         <div class="button-row">
             <a class="button-link secondary" href="{{ url_for('review_queue') }}">Back to Review Queue</a>
@@ -15,26 +15,82 @@
     </div>
 
     <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
+    {% if started %}<div class="success-box">Start Next Review opened the highest-priority active review ticket.</div>{% endif %}
+    <div class="info-box workflow-relationship-note">Review Ticket is the coordinator work record. Use it to complete the checklist, add notes, prepare the handoff summary, and mark the case ready for the Quality &amp; Patient Safety Review Team.</div>
+    {% if item.status == 'Archived' %}<div class="info-box">This ticket is archived and removed from the active Review Queue. It is kept for audit/history.</div>{% endif %}
+
+    <section class="case-panel next-step-panel">
+        <div class="section-heading"><span class="eyebrow">Next Recommended Step</span><h3>Next Recommended Step</h3></div>
+        <p class="recommended-action-text">{{ next_step_guidance }}</p>
+    </section>
+
+    <section class="case-panel ticket-stepper-panel">
+        <div class="ticket-lifecycle" aria-label="Review Ticket lifecycle">
+            {% for stage in ticket_lifecycle %}
+                <span class="{% if stage.active %}active{% endif %}">{{ stage.label }}</span>{% if not loop.last %}<b aria-hidden="true">&rarr;</b>{% endif %}
+            {% endfor %}
+        </div>
+        <div class="review-ticket-stepper" aria-label="Review Ticket workflow">
+            {% for step in ticket_steps %}
+                <span class="step-{{ step.state }}"><strong>{% if step.state == 'completed' %}&#10003;{% else %}{{ step.number }}{% endif %}</strong> {{ step.label }}</span>
+            {% endfor %}
+        </div>
+        <div class="button-row ticket-quick-actions">
+            {% if item.status != 'Archived' %}
+                <a class="button-link {% if primary_action != 'add_note' %}secondary{% endif %}" href="#note">Add Coordinator Note</a>
+                <a class="button-link {% if primary_action != 'prepare_summary' %}secondary{% endif %}" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
+                {% if item.status == 'Ready for Quality Team Review' %}
+                    <button type="button" class="button-link secondary disabled-action" disabled>Already Ready</button>
+                    <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><button type="submit" class="button-link">Mark Reviewed</button></form>
+                {% elif item.status in ['Reviewed', 'Closed'] %}
+                    <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link primary-danger danger-action">Archive</button></form>
+                {% else %}
+                    <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_ready_quality_team"><button type="submit" class="{% if primary_action == 'mark_ready' %}button-link{% else %}button-link secondary{% endif %}">Mark Ready for Quality Team Review</button></form>
+                {% endif %}
+            {% else %}
+                <span class="workflow-state-note">Archived for audit/history.</span>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="case-panel guided-checklist-panel">
+        <div class="section-heading"><span class="eyebrow">Guided Review Checklist</span><h3>Guided Review Checklist</h3><p class="section-lead">Use this checklist to support the four ticket steps: check signals, add a Coordinator Note, prepare the Prepared Review Summary, and mark the Review Ticket ready for team review.</p></div>
+        <ul class="guided-checklist" data-ticket-checklist="{{ item.id }}">
+            <li><label><input type="checkbox"> Confirm case identifiers</label></li>
+            <li><label><input type="checkbox"> Review AI risk and probability</label></li>
+            <li><label><input type="checkbox"> Review SIRS screening</label></li>
+            <li><label><input type="checkbox"> Check data quality / missing values</label></li>
+            <li><label><input type="checkbox"> Review main model signals</label></li>
+            <li><label><input type="checkbox"> Review anomaly / uncertainty if available</label></li>
+            <li><label><input type="checkbox"> Add Coordinator Note</label></li>
+            <li><label><input type="checkbox"> Set priority and status</label></li>
+            <li><label><input type="checkbox"> Prepare summary for Quality &amp; Patient Safety Review Team</label></li>
+        </ul>
+    </section>
 
     <section class="case-panel ticket-summary-panel" id="edit">
         <div class="section-heading"><span class="eyebrow">Ticket Snapshot</span><h3>Review Ticket Summary</h3></div>
         <div class="detail-grid">
             <div><span>Ticket ID</span><strong>#{{ item.id }}</strong></div>
+            <div><span>{% if item.icustay_id %}ICU Stay ID{% else %}Manual Case ID{% endif %}</span><strong>{% if item.icustay_id %}{{ item.icustay_id }}{% else %}#{{ item.manual_case_id }}{% endif %}</strong></div>
             <div><span>Case ID</span><strong>{{ item.case_display }}</strong></div>
             <div><span>Source</span><strong><span class="badge case-type {% if item.source_label == 'Manual' %}case-type-manual{% endif %}">{{ item.source_label }}</span></strong></div>
-            {% if item.local_review_reference %}<div><span>Local Review Reference</span><strong>{{ item.local_review_reference }}</strong></div>{% endif %}
-            <div><span>AI Risk</span><strong>{{ item.ai_risk_level or 'Not available' }}</strong></div>
+            <div><span>Local Review Reference</span><strong>{{ item.local_review_reference or 'Not provided' }}</strong></div>
+            <div><span>AI Risk</span><strong><span class="badge risk-{{ item.ai_risk_level|lower if item.ai_risk_level else 'unknown' }}">{{ item.ai_risk_level or 'Not available' }}</span></strong></div>
             <div><span>AI Probability</span><strong>{{ item.ai_probability_percent }}</strong></div>
             <div><span>SIRS Screening</span><strong>{{ item.sirs_screening }}{% if item.sirs_criteria_met is not none %} ({{ item.sirs_criteria_met }} of 4){% endif %}</strong></div>
+            <div><span>Data Quality</span><strong><span class="badge quality-{{ item.data_quality|lower if item.data_quality else 'unknown' }}">{{ item.data_quality or 'Not available' }}</span></strong></div>
             <div><span>Priority</span><strong>{{ item.priority }}</strong></div>
-            <div><span>Status</span><strong>{{ item.status }}</strong></div>
+            <div><span>Status</span><strong><span class="badge status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span></strong></div>
+            <div><span>Review Outcome</span><strong>{{ item.review_outcome or 'Not selected' }}</strong></div>
             <div><span>Coordinator</span><strong>{{ item.assigned_reviewer or 'Unassigned' }}</strong></div>
             <div><span>Last Updated</span><strong>{{ item.updated_at }}</strong></div>
+            <div><span>Recommended Coordinator Action</span><strong>{{ item.recommended_action }}</strong></div>
         </div>
     </section>
 
     <section class="case-panel recommended-action-panel">
-        <div class="section-heading"><span class="eyebrow">Recommended Coordinator Action</span><h3>Recommended Coordinator Action</h3></div>
+        <div class="section-heading"><span class="eyebrow">Next Coordinator Action</span><h3>Recommended Coordinator Action</h3></div>
         <p class="recommended-action-text">{{ item.recommended_action }}</p>
         <div class="ai-triage-summary">
             <div><span>AI Risk Tier</span><strong>{{ item.ai_risk_level or 'Not available' }}</strong></div>
@@ -42,15 +98,72 @@
             <div><span>SIRS Screening</span><strong>{{ item.sirs_screening }}</strong></div>
             <div><span>Confidence / Data Quality</span><strong>{{ item.confidence_label }} / {{ item.data_quality or 'Not available' }}</strong></div>
             <div><span>Main Model Signals</span><strong>{{ item.main_model_signal_text }}</strong></div>
-            <div><span>Suggested Review Priority</span><strong>{{ item.priority }}</strong></div>
+            <div><span>Current Priority</span><strong>{{ item.priority }}</strong></div>
         </div>
         <div class="button-row action-toolbar">
-            <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_in_review"><button type="submit">Mark In Review</button></form>
-            <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_follow_up"><button type="submit" class="button-link secondary">Mark Needs Follow-up</button></form>
-            <a class="button-link secondary" href="#note">Add Note</a>
-            <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><button type="submit" class="button-link secondary">Mark Reviewed</button></form>
-            <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link secondary danger-action">Archive</button></form>
+            {% if item.status == 'Archived' %}
+                <span class="workflow-state-note">This ticket is kept for audit/history.</span>
+            {% elif item.status == 'Ready for Quality Team Review' %}
+                <a class="button-link secondary" href="#note">Add Coordinator Note</a>
+                <a class="button-link secondary" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
+                <button type="button" class="button-link secondary disabled-action" disabled>Already Ready</button>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><button type="submit" class="button-link">Mark Reviewed</button></form>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_follow_up"><button type="submit" class="button-link secondary">Mark Needs Follow-up</button></form>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link secondary danger-action">Archive</button></form>
+            {% elif item.status in ['Reviewed', 'Closed'] %}
+                <a class="button-link secondary" href="#note">Add Coordinator Note</a>
+                <a class="button-link secondary" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link primary-danger danger-action">Archive</button></form>
+            {% else %}
+                {% if item.status == 'New' %}<form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_in_review"><button type="submit" class="{% if primary_action == 'mark_in_review' %}button-link{% else %}button-link secondary{% endif %}">Mark In Review</button></form>{% endif %}
+                <a class="button-link {% if primary_action != 'add_note' %}secondary{% endif %}" href="#note">Add Coordinator Note</a>
+                <a class="button-link {% if primary_action != 'prepare_summary' %}secondary{% endif %}" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_ready_quality_team"><button type="submit" class="{% if primary_action == 'mark_ready' %}button-link{% else %}button-link secondary{% endif %}">Mark Ready for Quality Team Review</button></form>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link secondary danger-action">Archive</button></form>
+            {% endif %}
         </div>
+    </section>
+
+    <section class="case-panel prepared-summary-panel" id="prepared-summary">
+        <div class="section-heading"><span class="eyebrow">Prepared Review Summary</span><h3>Prepared Review Summary</h3><p class="section-lead">This summary is the handoff text for the Quality &amp; Patient Safety Review Team.</p></div>
+        {% if summary_prepared %}<div class="success-box">Review summary prepared. Next step: mark the ticket Ready for Quality Team Review.</div>{% endif %}
+        <div class="button-row summary-actions"><a class="button-link {% if primary_action != 'prepare_summary' %}secondary{% endif %}" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a></div>
+        <textarea class="prepared-summary-box" id="prepared-summary-box" rows="10" readonly>{{ prepared_review_summary }}</textarea>
+    </section>
+
+    <section class="case-panel ai-workflow-trace-panel">
+        <details class="collapsible-section">
+            <summary>AI Workflow Trace</summary>
+            <p class="section-lead">Agent-inspired modular workflow for AI-guided review-support traceability.</p>
+            <ol class="ai-workflow-trace">
+                {% for step in ai_workflow_trace %}
+                    <li><strong>{{ step.label }}</strong><span>{{ step.detail }}</span></li>
+                {% endfor %}
+            </ol>
+        </details>
+    </section>
+
+    <section class="case-panel ai-assistant-ticket-panel">
+        <div class="section-heading"><span class="eyebrow">AI-Guided Review Assistant</span><h3>AI-Guided Review Assistant</h3><p class="section-lead">Uses model outputs, screening results, and ticket data to generate structured review-support text. Live generative mode is available only when an LLM API key is configured.</p></div>
+        <div class="ai-status-grid">
+            <div><span>Assistant mode</span><strong>{% if ai_system_status.generative_ai_status == 'configured' %}Live LLM configured{% else %}Offline template mode{% endif %}</strong></div>
+            <div><span>Scope</span><strong>Review summary, flag explanation, missing data, note draft, AI vs SIRS</strong></div>
+        </div>
+        {% if ai_system_status.generative_ai_status != 'configured' %}<p class="table-subtext">Offline template mode emphasizes the action buttons for structured review-support text.</p>{% endif %}
+        <p class="warning-box">{{ safety_sentence }}</p>
+        <div class="ai-quick-actions ticket-ai-actions">
+            <button type="button" data-ticket-output="summary">Generate review summary</button>
+            <button type="button" data-ticket-output="flagged">Explain why this case was flagged</button>
+            <button type="button" data-ticket-output="missing">List missing or uncertain data</button>
+            <button type="button" data-ticket-output="note">Draft coordinator note</button>
+            <button type="button" data-ticket-output="compare">Compare AI risk vs SIRS screening</button>
+        </div>
+        <div class="ai-assistant-output" id="ticket-assistant-output" aria-live="polite"><span class="table-subtext">Assistant output will appear here.</span></div>
+        <template id="ticket-ai-summary">{{ ticket_ai_outputs.summary }}</template>
+        <template id="ticket-ai-flagged">{{ ticket_ai_outputs.flagged }}</template>
+        <template id="ticket-ai-missing">{{ ticket_ai_outputs.missing }}</template>
+        <template id="ticket-ai-note">{{ ticket_ai_outputs.note }}</template>
+        <template id="ticket-ai-compare">{{ ticket_ai_outputs.compare }}</template>
     </section>
 
     {% if manual_case %}
@@ -72,20 +185,21 @@
     {% endif %}
 
     <section class="case-panel review-workflow-card">
-        <div class="section-heading"><span class="eyebrow">Update Ticket</span><h3>Update Ticket</h3></div>
+        <div class="section-heading"><span class="eyebrow">Update Ticket</span><h3>Set Priority and Status</h3></div>
         <form method="post" action="{{ url_for('review_item_edit', item_id=item.id) }}" class="review-form full-review-form">
             <label>Status<select name="status">{% for status in statuses %}<option value="{{ status }}" {% if item.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
             <label>Priority<select name="priority">{% for priority in priorities %}<option value="{{ priority }}" {% if item.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
+            <label>Review Outcome<select name="review_outcome"><option value="">Not selected</option>{% for outcome in review_outcomes %}<option value="{{ outcome }}" {% if item.review_outcome == outcome %}selected{% endif %}>{{ outcome }}</option>{% endfor %}</select></label>
             <label>Coordinator<input name="assigned_reviewer" value="{{ item.assigned_reviewer }}" placeholder="Coordinator name or initials"></label>
             <button type="submit">Save Ticket</button>
         </form>
     </section>
 
     <section class="case-panel review-workflow-card" id="note">
-        <div class="section-heading"><span class="eyebrow">Add Review Note</span><h3>Add Review Note</h3></div>
+        <div class="section-heading"><span class="eyebrow">Add Coordinator Note</span><h3>Add Coordinator Note</h3><p class="section-lead">Write what was reviewed, what is missing, and what the quality team should check.</p></div>
         <form method="post" action="{{ url_for('review_item_note', item_id=item.id) }}" class="review-form full-review-form">
             <label>Coordinator Name<input name="reviewer_name" placeholder="Coordinator"></label>
-            <label class="review-note-field">Note<textarea name="note_text" rows="4" placeholder="Document review context, follow-up, or closure rationale."></textarea></label>
+            <label class="review-note-field">Coordinator Note<textarea name="note_text" rows="4" placeholder="Document review context, follow-up, or handoff rationale."></textarea></label>
             <button type="submit">Add Note</button>
         </form>
     </section>
@@ -98,10 +212,36 @@
     </section>
 
     <section class="case-panel audit-trail-panel">
-        <div class="section-heading"><span class="eyebrow">Audit Trail</span><h3>Audit Events</h3></div>
+        <div class="section-heading"><span class="eyebrow">Audit Trail</span><h3>Audit Events</h3><p class="section-lead">Every status, note, and workflow action is recorded for traceability.</p></div>
         <div class="workflow-steps compact-architecture-steps">
             {% for event in audit_events %}<span><strong>{{ event.action }}</strong><small>{{ event.created_at }} - {{ event.details }}</small></span>{% else %}<span><strong>No audit events yet</strong></span>{% endfor %}
         </div>
     </section>
 </section>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const checklist = document.querySelector("[data-ticket-checklist]");
+        if (checklist) {
+            const storageKey = "review-ticket-checklist-" + checklist.dataset.ticketChecklist;
+            const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+            checklist.querySelectorAll("input[type='checkbox']").forEach(function (checkbox, index) {
+                checkbox.checked = Boolean(saved[index]);
+                checkbox.addEventListener("change", function () {
+                    const values = Array.from(checklist.querySelectorAll("input[type='checkbox']")).map(function (item) { return item.checked; });
+                    localStorage.setItem(storageKey, JSON.stringify(values));
+                });
+            });
+        }
+
+        const assistantOutput = document.getElementById("ticket-assistant-output");
+        document.querySelectorAll("[data-ticket-output]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const template = document.getElementById("ticket-ai-" + button.dataset.ticketOutput);
+                if (assistantOutput && template) {
+                    assistantOutput.textContent = template.content.textContent.trim();
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -29,6 +29,9 @@
         </aside>
 
         <main class="content main-content">
+            {% if workflow_message %}
+                <div class="workflow-message workflow-message-{{ workflow_message.level }}" role="status">{{ workflow_message.text }}</div>
+            {% endif %}
             {% block content %}{% endblock %}
         </main>
     </div>

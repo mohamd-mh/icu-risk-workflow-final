@@ -43,7 +43,7 @@
 
     <section class="case-panel">
         <div class="section-heading"><span class="eyebrow">Layer 2</span><h3>SIRS-style Screening Baseline</h3></div>
-        <p>This is a transparent clinical-warning baseline used for comparison and review context. It is not the AI model, not diagnosis, and not mortality prediction.</p>
+        <p>This is a transparent screening baseline used for comparison and review context. It is separate from the AI model and from outcome prediction.</p>
         <ul class="check-list">
             <li>Temperature above 38C or below 36C</li>
             <li>Heart rate above 90/min</li>
@@ -67,7 +67,7 @@
 
     <section class="case-panel">
         <div class="section-heading"><span class="eyebrow">Layer 4</span><h3>Review Workflow Priority</h3></div>
-        <p>Suggested review priority combines AI risk, SIRS-style screening, uncertainty/data quality, and review context. It is a workflow prioritization output for the Quality &amp; Patient Safety Coordinator, not a diagnosis or treatment recommendation.</p>
+        <p>Suggested review priority combines AI risk, SIRS-style screening, uncertainty/data quality, and review context. It is a workflow prioritization output for the Quality &amp; Patient Safety Coordinator.</p>
     </section>
 
     <section class="case-panel">
@@ -94,8 +94,8 @@
     <section class="case-panel">
         <div class="section-heading"><span class="eyebrow">Boundaries</span><h3>What the System Does Not Claim</h3></div>
         <ul class="check-list">
-            <li>Does not calculate official SOFA, SAPS, or OASIS scores unless those are separately implemented.</li>
-            <li>Does not provide treatment, medication, or routing advice.</li>
+            <li>Does not calculate separate ICU scoring systems unless those are separately implemented.</li>
+            <li>Does not provide care-plan, medication, or routing advice.</li>
             <li>Does not replace clinicians or qualified reviewers.</li>
             <li>Does not perform real-time hospital monitoring or connect to a live EHR.</li>
         </ul>

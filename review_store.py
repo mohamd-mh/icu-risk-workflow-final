@@ -11,8 +11,8 @@ from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("ICU_REVIEW_DB_PATH", BASE_DIR / "data" / "software_system.db"))
-ACTIVE_STATUSES = ("New", "In Review", "Reviewed", "Needs Follow-up", "Closed")
-STATUSES = ["New", "In Review", "Reviewed", "Needs Follow-up", "Closed", "Archived"]
+ACTIVE_STATUSES = ("New", "In Review", "Needs Follow-up", "Ready for Quality Team Review", "Reviewed", "Closed")
+STATUSES = ["New", "In Review", "Needs Follow-up", "Ready for Quality Team Review", "Reviewed", "Closed", "Archived"]
 PRIORITIES = ["Low", "Watch", "Urgent"]
 
 
@@ -42,6 +42,7 @@ def init_db() -> None:
                 assigned_reviewer TEXT DEFAULT '',
                 status TEXT DEFAULT 'New',
                 priority TEXT DEFAULT 'Low',
+                review_outcome TEXT DEFAULT '',
                 ai_risk_level TEXT,
                 ai_probability REAL,
                 data_quality TEXT,
@@ -89,6 +90,7 @@ def init_db() -> None:
             """
         )
         ensure_column(conn, "review_items", "local_review_reference", "TEXT DEFAULT ''")
+        ensure_column(conn, "review_items", "review_outcome", "TEXT DEFAULT ''")
         ensure_column(conn, "manual_cases", "local_review_reference", "TEXT DEFAULT ''")
 
 
@@ -239,7 +241,7 @@ def list_review_items(filters: dict[str, str] | None = None) -> list[dict[str, A
         ORDER BY
             CASE ri.priority WHEN 'Urgent' THEN 0 WHEN 'Watch' THEN 1 ELSE 2 END,
             CASE ri.ai_risk_level WHEN 'High' THEN 0 WHEN 'Medium' THEN 1 WHEN 'Low' THEN 2 ELSE 3 END,
-            CASE ri.status WHEN 'Needs Follow-up' THEN 0 WHEN 'New' THEN 1 WHEN 'In Review' THEN 2 WHEN 'Reviewed' THEN 3 WHEN 'Closed' THEN 4 ELSE 5 END,
+            CASE ri.status WHEN 'Needs Follow-up' THEN 0 WHEN 'New' THEN 1 WHEN 'In Review' THEN 2 WHEN 'Ready for Quality Team Review' THEN 3 WHEN 'Reviewed' THEN 4 WHEN 'Closed' THEN 5 ELSE 6 END,
             ri.updated_at DESC,
             ri.id DESC
     """
@@ -259,17 +261,25 @@ def get_manual_case(case_id: int) -> dict[str, Any] | None:
     return row_to_dict(row)
 
 
-def update_review_item(item_id: int, status: str, priority: str, assigned_reviewer: str) -> None:
+def update_review_item(item_id: int, status: str, priority: str, assigned_reviewer: str, review_outcome: str | None = None) -> None:
     if status not in STATUSES:
         status = "New"
     if priority not in PRIORITIES:
         priority = "Low"
+    current = get_review_item(item_id) or {}
+    if review_outcome is None:
+        review_outcome = current.get("review_outcome", "")
     with connect() as conn:
         conn.execute(
-            "UPDATE review_items SET status=?, priority=?, assigned_reviewer=?, updated_at=? WHERE id=?",
-            (status, priority, assigned_reviewer.strip(), now(), item_id),
+            "UPDATE review_items SET status=?, priority=?, assigned_reviewer=?, review_outcome=?, updated_at=? WHERE id=?",
+            (status, priority, assigned_reviewer.strip(), review_outcome.strip(), now(), item_id),
         )
-    add_audit_event("review_item", item_id, "Updated review item", {"status": status, "priority": priority, "assigned_reviewer": assigned_reviewer})
+    add_audit_event(
+        "review_item",
+        item_id,
+        "Updated review item",
+        {"status": status, "priority": priority, "assigned_reviewer": assigned_reviewer, "review_outcome": review_outcome},
+    )
 
 
 def add_review_note(item_id: int, reviewer_name: str, note_text: str) -> None:

@@ -14,10 +14,10 @@ from typing import Any
 
 SAFE_REFUSAL = (
     "This system supports quality-review prioritization and documentation only. "
-    "It does not provide diagnosis, treatment, or medication recommendations. "
-    "Please consult qualified clinical staff for medical decisions."
+    "It cannot provide bedside care instructions or patient-management recommendations. "
+    "Please route care questions through qualified hospital staff."
 )
-OFFLINE_MODE_NOTE = "Template-based offline summary from local model outputs; not live LLM output."
+OFFLINE_MODE_NOTE = "Offline template mode from local model outputs; not live LLM output."
 DEFAULT_API_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_MODEL = "gpt-4o-mini"
 UNSAFE_TERMS = [
@@ -186,10 +186,10 @@ def build_structured_context(
         "safety_constraints": [
             "academic prototype",
             "review support and explanation only",
-            "no diagnosis",
+            "review-support only",
             "no medication advice",
-            "no treatment recommendations",
-            "no emergency or clinical action instructions",
+            "no care-plan recommendations",
+            "no emergency or bedside action instructions",
         ],
     })
 
@@ -204,7 +204,7 @@ def call_llm_api(question: str, context: dict[str, Any]) -> str:
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": ("You are an academic ICU case-review assistant. Answer only about AI risk explanation, missing data, similar cases, cluster context, anomaly score, uncertainty, baseline comparison, reviewer note drafts, model training/evaluation, and workflow guidance. Refuse diagnosis, medication, treatment, emergency, or clinical action advice.")},
+            {"role": "system", "content": ("You are an academic ICU case-review assistant. Answer only about AI risk explanation, missing data, similar cases, cluster context, anomaly score, uncertainty, baseline comparison, reviewer note drafts, model training/evaluation, and workflow guidance. Refuse patient-management, medication, emergency, or bedside action advice.")},
             {"role": "user", "content": json.dumps({"question": question, "context": context}, indent=2)},
         ],
         "temperature": 0.2,

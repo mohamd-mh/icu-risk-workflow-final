@@ -7,17 +7,32 @@
             <span class="eyebrow">Main Workspace</span>
             <h2>Review Queue</h2>
             <p>This is the coordinator's active worklist. Cases are ranked by review priority, AI risk, SIRS screening, data quality, and status.</p>
+            <p class="page-guidance">This is the active worklist. Use quick actions for small updates or open the ticket for full review.</p>
         </div>
-        <a class="button-link large-button" href="{{ url_for('new_case') }}">Create Review Ticket</a>
+        <div class="button-row">
+            <a class="button-link large-button" href="{{ url_for('start_next_review') }}">Start Next Review</a>
+            <a class="button-link secondary" href="{{ url_for('new_case') }}">Create Review Ticket</a>
+        </div>
     </div>
 
     <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
+    {% if start_next == "empty" %}<div class="info-box">No active review tickets or dataset records were available to start. Create a manual Review Ticket or confirm the dataset is loaded.</div>{% endif %}
     {% if created == "1" %}<div class="success-box">Case added to the review queue.</div>{% elif created == "0" %}<div class="info-box">This case is already active in the queue. <a href="{{ url_for('review_item_detail', item_id=existing_id) }}">Open it</a>.</div>{% endif %}
+
+    <section class="status-overview-grid">
+        <article class="summary-card metric-card-modern"><span>New</span><strong>{{ workflow_stats.status_counts.New }}</strong></article>
+        <article class="summary-card metric-card-modern"><span>In Review</span><strong>{{ workflow_stats.status_counts['In Review'] }}</strong></article>
+        <article class="summary-card metric-card-modern"><span>Needs Follow-up</span><strong>{{ workflow_stats.status_counts['Needs Follow-up'] }}</strong></article>
+        <article class="summary-card metric-card-modern"><span>Ready for Quality Team Review</span><strong>{{ workflow_stats.status_counts['Ready for Quality Team Review'] }}</strong></article>
+        <article class="summary-card metric-card-modern"><span>Reviewed</span><strong>{{ workflow_stats.status_counts.Reviewed }}</strong></article>
+        <article class="summary-card metric-card-modern"><span>Archived</span><strong>{{ workflow_stats.status_counts.Archived }}</strong></article>
+    </section>
 
     <section class="filter-panel filter-panel-modern">
         <form method="get" class="filter-form worklist-filter-form">
             <label class="search-field">Search Case / Coordinator<input type="search" name="search" value="{{ filters.search }}" placeholder="Case ID, subject, HADM, coordinator"></label>
             <label>Status<select name="status"><option value="__active__" {% if filters.status == '__active__' %}selected{% endif %}>Active Work</option><option value="All" {% if filters.status == 'All' %}selected{% endif %}>All Including Archived</option>{% for status in statuses %}<option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
+            <p class="helper-note queue-status-helper">Archived tickets are hidden from Active Work and kept for audit history.</p>
             <label>Priority<select name="priority"><option value="">All</option>{% for priority in priorities %}<option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}</select></label>
             <label>AI Risk<select name="ai_risk_level"><option value="">All</option>{% for risk in ['High','Medium','Low','Unavailable'] %}<option value="{{ risk }}" {% if filters.ai_risk_level == risk %}selected{% endif %}>{{ risk }}</option>{% endfor %}</select></label>
             <label>SIRS Screening<select name="sirs_screening"><option value="">All</option><option value="positive" {% if filters.sirs_screening == 'positive' %}selected{% endif %}>SIRS Positive</option><option value="negative" {% if filters.sirs_screening == 'negative' %}selected{% endif %}>SIRS Negative</option></select></label>
@@ -56,10 +71,29 @@
                     <td class="recommended-action-cell">{{ item.recommended_action }}</td>
                     <td>{{ item.updated_at }}</td>
                     <td class="action-column">
-                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}">Open</a>
-                        <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_in_review"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action">In Review</button></form>
-                        <a class="table-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Add Note</a>
-                        <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action danger-action">Archive</button></form>
+                        <div class="queue-action-grid">
+                            <a class="table-action queue-primary-action" href="{{ url_for('review_item_detail', item_id=item.id) }}">Open Ticket</a>
+                            {% if item.status == 'New' %}
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_in_review"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-secondary-action">In Review</button></form>
+                                <a class="table-action queue-secondary-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Add Note</a>
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-danger-action danger-action">Archive</button></form>
+                            {% elif item.status in ['In Review', 'Needs Follow-up'] %}
+                                <a class="table-action queue-secondary-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Add Note</a>
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_ready_quality_team"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-secondary-action">Ready for Team</button></form>
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-danger-action danger-action">Archive</button></form>
+                            {% elif item.status == 'Ready for Quality Team Review' %}
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-secondary-action">Mark Reviewed</button></form>
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_follow_up"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-secondary-action">Needs Follow-up</button></form>
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-danger-action danger-action">Archive</button></form>
+                            {% elif item.status in ['Reviewed', 'Closed'] %}
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-danger-action danger-action">Archive</button></form>
+                            {% elif item.status == 'Archived' %}
+                                <span class="table-subtext queue-state-note">Kept for audit/history</span>
+                            {% else %}
+                                <a class="table-action queue-secondary-action" href="{{ url_for('review_item_detail', item_id=item.id) }}#note">Add Note</a>
+                                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><input type="hidden" name="return_to" value="{{ request.full_path }}"><button type="submit" class="table-action queue-danger-action danger-action">Archive</button></form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% else %}<tr><td colspan="10">No cases match the current filters.</td></tr>{% endfor %}

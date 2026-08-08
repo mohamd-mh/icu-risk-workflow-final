@@ -7,10 +7,83 @@
             <h2>AI-Assisted ICU Quality Review Workbench</h2>
             <p>Active workbench for prioritizing ICU review tickets, documenting coordinator actions, and keeping an auditable local trail.</p>
         </div>
-        <a class="button-link large-button" href="{{ url_for('review_queue') }}">Open Review Queue</a>
+        <a class="button-link large-button" href="{{ url_for('start_next_review') }}">Start Next Review</a>
     </div>
 
     <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
+
+    <section class="case-panel workflow-start-panel">
+        <div class="workflow-start-content">
+            <div>
+                <span class="eyebrow">Start Your Review Workflow</span>
+                <h3>Start Your Review Workflow</h3>
+                <p>Open the highest-priority active case and continue the review workflow.</p>
+                <p class="helper-note">Use this to continue the highest-priority active ticket.</p>
+            </div>
+            <div class="button-row workflow-start-actions">
+                <a class="button-link large-button" href="{{ url_for('start_next_review') }}">Start Next Review</a>
+                <a class="button-link secondary" href="{{ url_for('review_queue') }}">Open Review Queue</a>
+                <a class="button-link secondary" href="{{ url_for('new_case') }}">Create Review Ticket</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="case-panel work-summary-panel">
+        <div class="section-heading"><span class="eyebrow">Today's Work</span><h3>Work Summary</h3></div>
+        <div class="work-summary-grid">
+            <div><span>Active tickets</span><strong>{{ active_review_items }}</strong></div>
+            <div><span>Needs Follow-up</span><strong>{{ needs_follow_up }}</strong></div>
+            <div><span>Ready for Quality Team Review</span><strong>{{ workflow_stats.status_counts['Ready for Quality Team Review'] }}</strong></div>
+            <div><span>Suggested next action</span><strong>Start with the highest-priority active ticket, then clear Needs Follow-up items.</strong></div>
+        </div>
+    </section>
+
+    <section class="case-panel top-attention-panel">
+        <div class="section-heading">
+            <span class="eyebrow">Current Workflow</span>
+            <h3>Top Cases Needing Attention</h3>
+            <p class="section-lead">Cases are ranked by priority, AI risk, SIRS screening, status, confidence/data quality, and recent activity.</p>
+        </div>
+        <div class="table-container worklist-table-container">
+            <table class="worklist-table dashboard-queue-table">
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>AI Risk</th>
+                        <th>SIRS Screening</th>
+                        <th>Data Quality / Confidence</th>
+                        <th>Current Status</th>
+                        <th>Priority</th>
+                        <th>Recommended Action</th>
+                        <th class="action-column">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in attention_items %}
+                    <tr>
+                        <td><strong>{{ item.case_display }}</strong><span class="table-subtext">{{ item.source_label }}{% if item.local_review_reference %} - {{ item.local_review_reference }}{% endif %}</span></td>
+                        <td><span class="badge risk-{{ item.ai_risk_level|lower if item.ai_risk_level else 'unknown' }}">{{ item.ai_risk_level or 'Not available' }}</span><span class="table-subtext">{{ item.ai_probability_percent }}</span></td>
+                        <td><span class="badge screening-{{ item.sirs_screening_key }}">{{ item.sirs_screening }}</span>{% if item.sirs_criteria_met is not none %}<span class="table-subtext">{{ item.sirs_criteria_met }} of 4 criteria</span>{% endif %}</td>
+                        <td><span class="badge quality-{{ item.data_quality|lower if item.data_quality else 'unknown' }}">{{ item.data_quality or 'Not available' }}</span><span class="table-subtext">{{ item.confidence_label or 'Confidence not available' }}</span></td>
+                        <td><span class="badge status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span></td>
+                        <td><span class="badge priority priority-{{ item.priority|lower|replace(' ', '-') }}">{{ item.priority }}</span></td>
+                        <td class="recommended-action-cell">{{ item.recommended_action }}</td>
+                        <td class="action-column">
+                            <a class="table-action" href="{{ item.case_profile_url }}">Open Profile</a>
+                            {% if item.review_ticket_url %}
+                                <a class="table-action" href="{{ item.review_ticket_url }}">Open Ticket</a>
+                            {% else %}
+                                <form method="post" action="{{ url_for('add_dataset_case_to_review_queue', icustay_id=item.icustay_id) }}" class="inline-form"><input type="hidden" name="next" value="ticket"><button type="submit" class="table-action">Create Ticket</button></form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8">No cases are available for review right now.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <section class="kpi-grid">
         <article class="summary-card metric-card-modern kpi-card">
@@ -43,50 +116,6 @@
             <strong>{{ low_confidence_or_missing_cases }}</strong>
             <p>Dataset cases near risk thresholds or with Partial/Poor data quality.</p>
         </article>
-    </section>
-
-    <section class="case-panel top-attention-panel">
-        <div class="section-heading">
-            <span class="eyebrow">Current Workflow</span>
-            <h3>Top Cases Needing Attention</h3>
-            <p class="section-lead">Cases are ranked by review priority, AI risk, SIRS screening, data quality, status, and recent activity.</p>
-        </div>
-        <div class="table-container worklist-table-container">
-            <table class="worklist-table dashboard-queue-table">
-                <thead>
-                    <tr>
-                        <th>Case</th>
-                        <th>Source</th>
-                        <th>AI Triage Summary</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Recommended Coordinator Action</th>
-                        <th class="action-column">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in active_ticket_items %}
-                    <tr>
-                        <td><strong>{{ item.case_display }}</strong>{% if item.local_review_reference %}<span class="table-subtext">{{ item.local_review_reference }}</span>{% endif %}</td>
-                        <td><span class="badge case-type {% if item.source_label == 'Manual' %}case-type-manual{% endif %}">{{ item.source_label }}</span></td>
-                        <td class="triage-cell">
-                            <span class="badge risk-{{ item.ai_risk_level|lower if item.ai_risk_level else 'unknown' }}">{{ item.ai_risk_level or 'Not available' }}</span>
-                            <span class="table-subtext">{{ item.ai_probability_percent }} · {{ item.sirs_screening }} · {{ item.data_quality or item.confidence_label }}</span>
-                        </td>
-                        <td><span class="badge priority priority-{{ item.priority|lower }}">{{ item.priority }}</span></td>
-                        <td><span class="badge status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span></td>
-                        <td class="recommended-action-cell">{{ item.recommended_action }}</td>
-                        <td class="action-column">
-                            <a class="table-action" href="{{ item.case_profile_url }}">Open Profile</a>
-                            {% if item.review_ticket_url %}<a class="table-action" href="{{ item.review_ticket_url }}">Open Ticket</a>{% else %}<form method="post" action="{{ url_for('add_dataset_case_to_review_queue', icustay_id=item.icustay_id) }}" class="inline-form"><input type="hidden" name="next" value="ticket"><button type="submit" class="table-action">Create Ticket</button></form>{% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="7">No cases available for triage.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </section>
 
     <div class="dashboard-two-column">
@@ -143,13 +172,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in attention_items %}
+                    {% for item in active_ticket_items %}
                     <tr>
                         <td><strong>{{ item.case_display }}</strong></td>
                         <td><span class="badge case-type {% if item.source_label == 'Manual' %}case-type-manual{% endif %}">{{ item.source_label }}</span></td>
                         <td><span class="badge risk-{{ item.ai_risk_level|lower if item.ai_risk_level else 'unknown' }}">{{ item.ai_risk_level or 'Not available' }}</span></td>
                         <td><span class="badge screening-{{ item.sirs_screening_key }}">{{ item.sirs_screening }}</span></td>
-                        <td><span class="badge priority priority-{{ item.priority|lower }}">{{ item.priority }}</span></td>
+                        <td><span class="badge priority priority-{{ item.priority|lower|replace(' ', '-') }}">{{ item.priority }}</span></td>
                         <td><span class="badge status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span></td>
                         <td>{{ item.assigned_reviewer or 'Unassigned' }}</td>
                         <td>{{ item.updated_at }}</td>
@@ -187,10 +216,10 @@
                 <h3>Start Work</h3>
             </div>
             <div class="quick-action-grid">
-                <a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a>
+                <a class="button-link" href="{{ url_for('start_next_review') }}">Start Next Review</a>
+                <a class="button-link secondary" href="{{ url_for('review_queue') }}">Open Review Queue</a>
                 <a class="button-link secondary" href="{{ url_for('icu_cases') }}">Browse Case Library</a>
                 <a class="button-link secondary" href="{{ url_for('new_case') }}">Create Review Ticket</a>
-                <a class="button-link secondary" href="{{ url_for('ai_evaluation') }}">View AI Risk Engine</a>
             </div>
         </section>
     </div>

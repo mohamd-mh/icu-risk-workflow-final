@@ -27,7 +27,7 @@ DISPLAY_NAMES = {
 }
 EXPLANATION_NOTE = (
     "Feature contribution is an explainability aid for the trained AI model, "
-    "not a clinical decision."
+    "provided for quality-review support."
 )
 _FEATURE_IMPORTANCE_CACHE: list[dict[str, Any]] | None = None
 

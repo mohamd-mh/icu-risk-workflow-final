@@ -110,5 +110,5 @@ def find_similar_cases(case_data: dict[str, Any], top_n: int = 5) -> dict[str, A
             "average_age": avg_age,
             "common_admission_type": common_admission_type or "Not available",
         },
-        "note": "Similar cases are retrieved from the processed academic dataset using nearest-neighbor similarity. They are review context only, not treatment guidance.",
+        "note": "Similar cases are retrieved from the processed academic dataset using nearest-neighbor similarity. They are review context only.",
     }

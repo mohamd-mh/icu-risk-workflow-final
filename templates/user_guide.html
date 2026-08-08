@@ -5,30 +5,61 @@
         <div>
             <span class="eyebrow">User Guide</span>
             <h2>AI-Assisted ICU Quality Review Workbench</h2>
-            <p>Practical guide for an ICU Quality &amp; Patient Safety Coordinator using the local academic workbench.</p>
+            <p>Workflow guide for the ICU Quality &amp; Patient Safety Coordinator.</p>
         </div>
-        <a class="button-link" href="{{ url_for('review_queue') }}">Open Review Queue</a>
+        <a class="button-link" href="{{ url_for('start_next_review') }}">Start Next Review</a>
     </div>
 
-    <section class="case-panel guide-callout"><h3>What the Coordinator Does</h3><p>The coordinator reviews prioritized cases, assigns status and priority, records ownership, adds notes, checks audit history, and archives items when review documentation is complete.</p></section>
+    <section class="case-panel guide-callout">
+        <h3>Who Uses This Workbench</h3>
+        <p>The target user is an ICU Quality &amp; Patient Safety Coordinator who reviews prioritized cases, documents local review notes, prepares a structured summary, and marks the ticket ready for the Quality &amp; Patient Safety Review Team.</p>
+    </section>
 
-    <section class="case-panel"><h3>Dashboard</h3><p>The Dashboard is the first screen. It shows total ICU cases, active review items, high AI risk cases, SIRS-positive cases, follow-up work, low-confidence or missing-data cases, risk/status distributions, recent activity, and quick actions.</p></section>
+    <section class="case-panel">
+        <div class="section-heading"><span class="eyebrow">Coordinator Workflow</span><h3>Coordinator Workflow</h3></div>
+        <ol class="guide-steps workflow-guide-list">
+            <li>Open Dashboard</li>
+            <li>Click Start Next Review</li>
+            <li>Review AI Review Guide</li>
+            <li>Open/Create Review Ticket</li>
+            <li>Complete Guided Review Checklist</li>
+            <li>Add Coordinator Note</li>
+            <li>Generate Prepared Review Summary</li>
+            <li>Mark Ready for Quality Team Review</li>
+            <li>Continue to next case</li>
+        </ol>
+    </section>
 
-    <section class="case-panel"><h3>Review Queue</h3><p>The Review Queue is the main workspace. Use filters for status, priority, AI risk, SIRS screening, source, coordinator, and search. Open a Case Safety Profile, add notes, update ownership/status/priority, and archive completed items.</p></section>
+    <section class="case-panel">
+        <h3>What AI Helps With</h3>
+        <p>AI sorts the work by estimating risk probability, assigning a risk tier, showing SIRS-style screening context, surfacing model signals, and identifying missing or uncertain data that the coordinator should document.</p>
+    </section>
 
-    <section class="case-panel"><h3>Case Library</h3><p>The Case Library browses the processed ICU feature dataset with pagination. Search by ICU stay ID, filter by AI risk or SIRS screening, open a Case Safety Profile, or add a dataset case to the Review Queue.</p></section>
+    <section class="case-panel">
+        <h3>What The System Does Not Do</h3>
+        <p>{{ safety_sentence }}</p>
+        <ul class="check-list">
+            <li>It is not a live hospital EHR.</li>
+            <li>It is not real-time ICU monitoring.</li>
+            <li>It does not provide care-plan or medication advice.</li>
+            <li>It does not replace the Quality &amp; Patient Safety Review Team.</li>
+        </ul>
+    </section>
 
-    <section class="case-panel"><h3>Create Review Ticket</h3><p>Manual cases are local software submissions for AI-supported quality review. The optional Local Review Reference can connect this software ticket to outside review material without storing patient name, real MRN, or private identity fields. Empty numeric fields are allowed; invalid numeric text shows a friendly field error and does not run prediction.</p></section>
+    <section class="case-panel">
+        <h3>What Gets Prepared</h3>
+        <p>The Review Ticket prepares a concise handoff summary for the Quality &amp; Patient Safety Review Team. The summary includes the case reference, reason flagged, AI risk and probability, SIRS screening, main model signals, data quality or uncertainty notes, coordinator note summary, current priority/status, and recommended next review step.</p>
+    </section>
 
-    <section class="case-panel"><h3>Case Safety Profile</h3><p>The profile shows ICU Stay ID, Subject ID, Hospital Admission ID, source, AI risk/probability, SIRS screening, review priority, status, coordinator, confidence/data quality, model signals, similar cases, cluster context, anomaly detection, uncertainty, notes, and audit trail. It also shows the Recommended Coordinator Action.</p></section>
+    <section class="case-panel"><h3>Dashboard</h3><p>The Dashboard is the starting point. Use Start Next Review to open the highest-priority active ticket, or use Top Cases Needing Attention to open a profile or create a ticket.</p></section>
 
-    <section class="case-panel"><h3>AI Risk Engine</h3><p>This page explains the four layers: the trained Logistic Regression model, the SIRS-style screening baseline, supporting analytics, and the review workflow priority. It also lists what the system does not claim.</p></section>
+    <section class="case-panel"><h3>Case Safety Profile</h3><p>The Case Safety Profile explains why a case matters. Start with the AI Review Guide, then review the risk tier, probability, SIRS screening, confidence/data quality, model signals, and any missing or uncertain data.</p></section>
 
-    <section class="case-panel"><h3>Model Validation</h3><p>Use this page to inspect saved ML metrics, confusion matrices, baseline comparison, precision/recall tradeoffs, and limitations. Do not treat the results as clinical validation.</p></section>
+    <section class="case-panel"><h3>Review Ticket</h3><p>The Review Ticket is the main work page. Use the Guided Review Checklist, add a coordinator note, generate the Prepared Review Summary, set priority/status, and mark the ticket Ready for Quality Team Review when the handoff material is ready.</p></section>
 
-    <section class="case-panel guide-callout safety-guide-card"><h3>Safety and Limitations</h3><p>{{ safety_sentence }}</p><ul class="check-list"><li>Not a live hospital EHR.</li><li>Not real-time ICU monitoring.</li><li>Not treatment or medication advice.</li><li>Not official SOFA, SAPS, or OASIS scoring unless separately implemented.</li></ul></section>
+    <section class="case-panel"><h3>Create Review Ticket</h3><p>Use Create Review Ticket for a local manual case that is not already selected from the Case Library. Empty numeric fields are allowed; invalid numeric text shows a field error instead of a server error.</p></section>
 
-    <section class="case-panel"><h3>Dataset Identity and Reproducibility</h3><p>This workbench uses de-identified ICU stay records. In a real deployment, the hospital would connect the local review reference to its internal EHR identity system.</p><p><code>data/patient_features_ai.csv</code> is the final processed 1000-row feature dataset used at runtime. Earlier <code>patient_features_real.csv</code> was the 100-row development output. Raw MIMIC files are not included.</p><p>Source tables documented for preprocessing are <code>PATIENTS.csv</code>, <code>ADMISSIONS.csv</code>, <code>ICUSTAYS.csv</code>, <code>D_ITEMS.csv</code>, <code>D_LABITEMS.csv</code>, <code>CHARTEVENTS.csv</code>, and <code>LABEVENTS.csv</code>. Large tables require chunked reading. Regenerating the dataset may change metrics and requires retraining/retesting.</p></section>
+    <section class="case-panel"><h3>Review Queue</h3><p>The Review Queue shows new work, in-review tickets, follow-up items, tickets ready for the quality team, reviewed cases, and archived tickets. Filters help coordinators focus on status, priority, AI risk, SIRS screening, source, and owner.</p></section>
 
     <section class="case-panel"><h3>Installation / Running Instructions</h3><p>From the parent project folder, enter the software folder, create a virtual environment named <code>.venv</code>, install dependencies, then start the app.</p><p><strong>PowerShell:</strong></p><pre class="command-block">cd Software_System
 python -m venv .venv

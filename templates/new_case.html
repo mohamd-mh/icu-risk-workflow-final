@@ -2,13 +2,14 @@
 
 {% block content %}
 <section class="page-section wide-section new-case-page">
-    <div class="page-header page-header-modern"><div><span class="eyebrow">Quality Review Intake</span><h2>Create Review Ticket</h2><p>Create a local manual review case and run AI-supported review analysis.</p></div></div>
+    <div class="page-header page-header-modern"><div><span class="eyebrow">Quality Review Intake</span><h2>Create Review Ticket</h2><p>This page creates a local review ticket for a case that is not already selected from the Case Library.</p></div></div>
 
     <div class="new-case-layout">
     <section class="case-panel new-case-form-panel">
         <div class="safety-strip"><strong>Safety scope:</strong> {{ safety_sentence }}</div>
-        <div class="info-box">Missing values are allowed. The model pipeline handles missing inputs using imputation. The result supports quality review only, not diagnosis.</div>
-        <div class="info-box">Manual review cases are local submissions entered into this software for AI-supported quality review. They do not modify the original processed ICU dataset and do not create real hospital ICU stays.</div>
+        <div class="info-box">Missing values are allowed. The model pipeline handles missing inputs using imputation. The result supports quality review only.</div>
+        <div class="info-box">Manual inputs use broad plausibility checks to prevent unit/data-entry mistakes. This is input quality control for manual review data.</div>
+        <div class="info-box">Manual review cases are local submissions entered into this software for AI-supported quality review. After submit, the manual case becomes part of the coordinator's review workflow.</div>
         {% if errors %}<div class="warning-box">Please fix the highlighted field(s) below before running the analysis.</div>{% endif %}
         <form method="post" class="review-form full-review-form manual-case-form">
             <fieldset class="form-input-card"><legend>Basic Context</legend><div class="form-card-grid">
@@ -35,14 +36,14 @@
     </section>
     <aside class="case-panel new-case-helper-panel">
         <div class="section-heading"><span class="eyebrow">Review workflow</span><h3>What happens next?</h3></div>
-        <ol class="helper-steps"><li>The model aligns entered values to the input schema.</li><li>Missing values are handled by imputation.</li><li>The AI model estimates risk probability.</li><li>The system shows confidence, similar cases, and review context.</li><li>The coordinator opens the created review ticket and documents next steps.</li></ol>
+        <ol class="helper-steps"><li>The model aligns entered values to the input schema.</li><li>Missing values are handled by imputation.</li><li>The AI model estimates risk probability.</li><li>The result panel shows SIRS screening, confidence, suggested priority, and recommended action.</li><li>The coordinator opens the created review ticket, documents the case, and prepares it for quality-team review.</li></ol>
         <div class="safety-strip"><strong>Identity:</strong> Do not enter patient names, real MRNs, or private identity fields.</div>
     </aside>
     </div>
 
     {% if result %}
     <section class="case-panel ai-assessment-panel">
-        <div class="section-heading"><span class="eyebrow">Ticket Created</span><h3>Manual Review Case #{{ result.manual_case.id }}</h3></div>
+        <div class="section-heading"><span class="eyebrow">Ticket Created</span><h3>Manual Review Case #{{ result.manual_case.id }}</h3><p class="section-lead">This manual case is now part of the coordinator review workflow.</p></div>
         <div class="summary-grid compact-summary">
             <div class="summary-card"><span>Local Review Reference</span><strong>{{ result.manual_case.local_review_reference or 'Not provided' }}</strong></div>
             <div class="summary-card risk-card-{{ result.ai_prediction.ai_risk_level|lower }}"><span>AI Risk</span><strong>{{ result.ai_prediction.ai_risk_level }}</strong></div>

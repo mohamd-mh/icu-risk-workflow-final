@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import pandas as pd
 from flask import Flask, jsonify, redirect, render_template, request, url_for
@@ -67,24 +68,37 @@ CLINICAL_MEASUREMENTS = [
     ("hemoglobin_min", "Minimum hemoglobin", "g/dL"),
 ]
 
-REVIEW_STATUSES = ["Not Reviewed", "Reviewed", "Needs Follow-up"]
+REVIEW_STATUSES = ["Not Reviewed", "In Review", "Needs Follow-up", "Ready for Quality Team Review", "Reviewed"]
 REVIEW_PRIORITIES = ["Normal", "Watch", "Urgent Review"]
 
 SAFETY_SENTENCE = (
     "This system supports quality-review prioritization and documentation only. "
-    "It does not provide diagnosis, treatment, or medication recommendations."
+    "It does not replace hospital review, bedside assessment, or care protocols."
 )
 CASE_PAGE_SIZE_OPTIONS = [25, 50]
 DEFAULT_CASE_PAGE_SIZE = 25
+REVIEW_OUTCOMES = [
+    "Pending team review",
+    "No further action",
+    "Needs follow-up documentation",
+    "Data quality issue",
+    "Escalated to quality team",
+    "Reviewed and closed",
+]
 
 NAV_SECTIONS = [
     {
-        "label": "AI-Assisted ICU Quality Review Workbench",
+        "label": "Main Workflow",
         "pages": [
             {"endpoint": "software_home", "label": "Dashboard"},
             {"endpoint": "review_queue", "label": "Review Queue"},
             {"endpoint": "icu_cases", "label": "Case Library"},
             {"endpoint": "new_case", "label": "Create Review Ticket"},
+        ],
+    },
+    {
+        "label": "System Transparency",
+        "pages": [
             {"endpoint": "ai_evaluation", "label": "AI Risk Engine"},
             {"endpoint": "results", "label": "Model Validation"},
             {"endpoint": "user_guide", "label": "User Guide"},
@@ -93,10 +107,74 @@ NAV_SECTIONS = [
 ]
 PAGES = [page for section in NAV_SECTIONS for page in section["pages"]]
 
+WORKFLOW_MESSAGES = {
+    "ticket_in_review": {
+        "level": "success",
+        "text": "Ticket moved to In Review. Next step: review signals and add a Coordinator Note.",
+    },
+    "note_saved": {
+        "level": "success",
+        "text": "Coordinator Note saved. Next step: generate the Prepared Review Summary.",
+    },
+    "summary_prepared": {
+        "level": "success",
+        "text": "Review summary prepared. Next step: mark the ticket Ready for Quality Team Review.",
+    },
+    "ready_quality_team": {
+        "level": "success",
+        "text": "Ticket is ready for the Quality & Patient Safety Review Team.",
+    },
+    "ticket_reviewed": {
+        "level": "success",
+        "text": "Ticket marked as Reviewed. Archive when documentation is complete.",
+    },
+    "ticket_archived": {
+        "level": "info",
+        "text": "This ticket is archived and removed from the active Review Queue. It is kept for audit/history.",
+    },
+    "ticket_updated": {
+        "level": "success",
+        "text": "Review Ticket updated.",
+    },
+}
+
+
+def workflow_message_from_code(code):
+    return WORKFLOW_MESSAGES.get(code or "")
+
+
+def local_redirect_target(target, fallback):
+    if not target or not target.startswith("/") or target.startswith("//"):
+        return fallback
+    return target
+
+
+def add_query_params(target, **params):
+    split = urlsplit(target)
+    query = dict(parse_qsl(split.query, keep_blank_values=True))
+    for key, value in params.items():
+        if value is not None:
+            query[key] = value
+    return urlunsplit((split.scheme, split.netloc, split.path, urlencode(query), split.fragment))
+
+
+def status_message_code(status):
+    return {
+        "In Review": "ticket_in_review",
+        "Ready for Quality Team Review": "ready_quality_team",
+        "Reviewed": "ticket_reviewed",
+        "Archived": "ticket_archived",
+    }.get(status, "ticket_updated")
+
 @app.context_processor
 def inject_navigation():
     """Make the sidebar links available to every template."""
-    return {"pages": PAGES, "nav_sections": NAV_SECTIONS, "safety_sentence": SAFETY_SENTENCE}
+    return {
+        "pages": PAGES,
+        "nav_sections": NAV_SECTIONS,
+        "safety_sentence": SAFETY_SENTENCE,
+        "workflow_message": workflow_message_from_code(request.args.get("msg")),
+    }
 
 
 def load_patient_data():
@@ -228,7 +306,17 @@ def get_risk_sort_value(risk_level):
 
 
 def get_status_sort_value(status):
-    return {"Needs Follow-up": 0, "New": 1, "In Review": 2, "Reviewed": 3, "Closed": 4, "Archived": 5}.get(status or "", 6)
+    return {
+        "Needs Follow-up": 0,
+        "New": 1,
+        "Not Reviewed": 1,
+        "In Queue": 1,
+        "In Review": 2,
+        "Ready for Quality Team Review": 3,
+        "Reviewed": 4,
+        "Closed": 5,
+        "Archived": 6,
+    }.get(status or "", 7)
 
 
 def get_confidence_label(probability, data_quality):
@@ -255,8 +343,10 @@ def build_recommended_action(
     source="",
 ):
     if status == "Archived":
-        return "Ticket is archived. Reopen only if additional quality-review documentation is needed."
-    if status == "Reviewed":
+        return "This ticket is archived and removed from the active Review Queue. It is kept for audit/history."
+    if status == "Ready for Quality Team Review":
+        return "Ready for handoff. Keep the prepared summary, notes, and audit trail available for the Quality & Patient Safety Review Team."
+    if status in {"Reviewed", "Closed"}:
         return "Review documentation appears complete. Archive if no further follow-up is needed."
     if status == "Needs Follow-up":
         return "Needs follow-up documentation. Add a coordinator note and keep ownership assigned."
@@ -291,6 +381,8 @@ def get_review_state_from_item(item):
         return "Not Reviewed"
     if item.get("status") == "Archived":
         return "Archived"
+    if item.get("status") == "Ready for Quality Team Review":
+        return "Ready for Quality Team Review"
     if item.get("status") == "Reviewed":
         return "Reviewed"
     return "In Queue"
@@ -303,10 +395,24 @@ def triage_score(item):
         get_priority_sort_value(item.get("priority") or item.get("suggested_review_priority")),
         get_risk_sort_value(item.get("ai_risk_level")),
         0 if item.get("sirs_screening_key") == "positive" else 1,
-        0 if item.get("low_confidence_or_missing") or item.get("data_quality") in {"Partial", "Poor"} else 1,
         0 if status == "Needs Follow-up" else 1,
         get_status_sort_value(status),
+        0 if item.get("low_confidence_or_missing") or item.get("data_quality") in {"Partial", "Poor"} else 1,
         -int(str(updated).replace("-", "").replace(":", "").replace(" ", "") or 0) if str(updated).replace("-", "").replace(":", "").replace(" ", "").isdigit() else 0,
+    )
+
+
+def start_next_review_score(item):
+    status = item.get("status") or item.get("review_status")
+    updated = item.get("updated_at") or ""
+    numeric_updated = str(updated).replace("-", "").replace(":", "").replace(" ", "")
+    return (
+        get_priority_sort_value(item.get("priority") or item.get("suggested_review_priority")),
+        get_risk_sort_value(item.get("ai_risk_level")),
+        0 if item.get("sirs_screening_key") == "positive" else 1,
+        get_status_sort_value(status),
+        0 if item.get("low_confidence_or_missing") or item.get("data_quality") in {"Partial", "Poor"} else 1,
+        -int(numeric_updated) if numeric_updated.isdigit() else 0,
     )
 
 
@@ -757,8 +863,231 @@ def get_measurement_rows(patient):
     return rows
 
 
+def summarize_note_timeline(notes):
+    if not notes:
+        return "No coordinator note has been added yet."
+    latest = notes[0]
+    note_text = (latest.get("note_text") or "").strip()
+    reviewer = latest.get("reviewer_name") or "Coordinator"
+    timestamp = latest.get("created_at") or "time not recorded"
+    if len(note_text) > 320:
+        note_text = note_text[:317].rstrip() + "..."
+    return f"Latest note by {reviewer} at {timestamp}: {note_text}"
+
+
+def format_missing_or_uncertain_text(item):
+    missing_features = item.get("ai_missing_important_values") or []
+    missing_names = [
+        feature.get("display_name") or feature.get("feature")
+        for feature in missing_features
+        if isinstance(feature, dict) and (feature.get("display_name") or feature.get("feature"))
+    ]
+    confidence = item.get("confidence_label") or "Not available"
+    data_quality = item.get("data_quality") or "Not available"
+    if missing_names:
+        return f"Data quality: {data_quality}; confidence: {confidence}; missing or imputed top AI signals: {', '.join(missing_names)}."
+    return f"Data quality: {data_quality}; confidence: {confidence}; no missing top AI model signals are shown."
+
+
+def build_prepared_review_summary(item, notes):
+    case_reference = item.get("local_review_reference") or item.get("case_display") or f"Ticket #{item.get('id')}"
+    case_identifier = item.get("icustay_id") or f"Manual Case #{item.get('manual_case_id', 'not available')}"
+    review_outcome = item.get("review_outcome") or "Not selected"
+    reason_flagged = (
+        f"The case is queued because AI risk is {item.get('ai_risk_level') or 'not available'} "
+        f"({item.get('ai_probability_percent', 'Not available')}), SIRS screening is "
+        f"{item.get('sirs_screening', 'not available')}, and the current workflow priority is "
+        f"{item.get('priority', 'not available')}."
+    )
+    return "\n".join(
+        [
+            f"Case reference: {case_reference}",
+            f"Ticket: #{item.get('id')} | Source: {item.get('source_label', 'Not available')} | Case ID: {case_identifier}",
+            f"Reason flagged: {reason_flagged}",
+            f"AI risk and probability: {item.get('ai_risk_level') or 'Not available'} / {item.get('ai_probability_percent', 'Not available')}",
+            f"SIRS screening: {item.get('sirs_screening', 'Not available')}",
+            f"Main contributing signals: {item.get('main_model_signal_text') or 'Not available'}",
+            f"Data quality / uncertainty notes: {format_missing_or_uncertain_text(item)}",
+            f"Coordinator note summary: {summarize_note_timeline(notes)}",
+            f"Current priority/status: {item.get('priority', 'Not available')} / {item.get('status', 'Not available')}",
+            f"Review outcome: {review_outcome}",
+            f"Recommended next review step: {item.get('recommended_action') or 'Open the ticket, document review context, and update status.'}",
+        ]
+    )
+
+
+def build_ticket_assistant_outputs(item, prepared_review_summary):
+    missing_text = format_missing_or_uncertain_text(item)
+    return {
+        "summary": prepared_review_summary,
+        "flagged": (
+            f"This ticket is prioritized because AI risk is {item.get('ai_risk_level') or 'not available'} "
+            f"with probability {item.get('ai_probability_percent', 'Not available')}, SIRS screening is "
+            f"{item.get('sirs_screening', 'not available')}, and current data quality/confidence is "
+            f"{item.get('data_quality') or 'not available'} / {item.get('confidence_label') or 'not available'}."
+        ),
+        "missing": missing_text,
+        "note": (
+            f"Coordinator note draft: reviewed {item.get('case_display', 'this case')} for AI-assisted quality-review priority. "
+            f"AI risk: {item.get('ai_risk_level') or 'not available'} ({item.get('ai_probability_percent', 'Not available')}); "
+            f"SIRS screening: {item.get('sirs_screening', 'not available')}; data quality/confidence: "
+            f"{item.get('data_quality') or 'not available'} / {item.get('confidence_label') or 'not available'}. "
+            "Document local findings and update status based on review workflow."
+        ),
+        "compare": (
+            f"AI risk is {item.get('ai_risk_level') or 'not available'} at {item.get('ai_probability_percent', 'Not available')}; "
+            f"SIRS-style screening is {item.get('sirs_screening', 'not available')}. Use the comparison to prioritize review documentation and follow-up."
+        ),
+    }
+
+
+def normalize_review_outcome(review_outcome):
+    return review_outcome if review_outcome in REVIEW_OUTCOMES else ""
+
+
+def is_summary_prepared(item, explicit_summary_prepared=False):
+    return explicit_summary_prepared or item.get("status") in {
+        "Ready for Quality Team Review",
+        "Reviewed",
+        "Archived",
+    }
+
+
+def build_next_step_guidance(item, summary_prepared=False):
+    status = item.get("status")
+    if status == "Ready for Quality Team Review":
+        return "This ticket is prepared for the Quality & Patient Safety Review Team. After team review, mark it Reviewed or move it back to Needs Follow-up."
+    if status in {"Reviewed", "Closed"}:
+        return "Review is complete. Archive the ticket when documentation is no longer active."
+    if status == "Archived":
+        return "This ticket is archived and removed from the active Review Queue. It is kept for audit/history."
+    if summary_prepared:
+        return "Review summary prepared. Next step: mark the ticket Ready for Quality Team Review."
+    return {
+        "New": "Start by checking the AI/SIRS signals, then mark the ticket In Review.",
+        "In Review": "Add a Coordinator Note and prepare the review summary.",
+        "Needs Follow-up": "Document the missing follow-up information or assign ownership before preparing the handoff.",
+    }.get(status, "Open the Review Ticket, check signals, add a Coordinator Note, and prepare the handoff summary.")
+
+
+def build_ticket_stepper(item, notes, summary_prepared=False):
+    status = item.get("status")
+    step_1_completed = status in {"In Review", "Needs Follow-up", "Ready for Quality Team Review", "Reviewed", "Archived"}
+    step_2_completed = bool(notes)
+    step_3_completed = is_summary_prepared(item, summary_prepared)
+    step_4_completed = status in {"Ready for Quality Team Review", "Reviewed", "Archived"}
+    steps = [
+        {"number": 1, "label": "Check Signals", "completed": step_1_completed},
+        {"number": 2, "label": "Add Note", "completed": step_2_completed},
+        {"number": 3, "label": "Prepare Summary", "completed": step_3_completed},
+        {"number": 4, "label": "Mark Ready for Team", "completed": step_4_completed},
+    ]
+    current_assigned = False
+    for step in steps:
+        if step["completed"]:
+            step["state"] = "completed"
+        elif not current_assigned:
+            step["state"] = "active"
+            current_assigned = True
+        else:
+            step["state"] = "pending"
+    if all(step["completed"] for step in steps):
+        steps[-1]["state"] = "completed"
+    return steps
+
+
+def build_ticket_lifecycle(item):
+    status = item.get("status")
+    stages = [
+        {"label": "New", "matches": {"New"}},
+        {"label": "In Review", "matches": {"In Review"}},
+        {
+            "label": "Needs Follow-up / Ready for Quality Team Review",
+            "matches": {"Needs Follow-up", "Ready for Quality Team Review"},
+        },
+        {"label": "Reviewed", "matches": {"Reviewed", "Closed"}},
+        {"label": "Archived", "matches": {"Archived"}},
+    ]
+    for stage in stages:
+        stage["active"] = status in stage["matches"]
+    return stages
+
+
+def primary_ticket_action(item, notes, summary_prepared=False):
+    status = item.get("status")
+    if status == "Ready for Quality Team Review":
+        return "mark_reviewed"
+    if status in {"Reviewed", "Closed"}:
+        return "archive"
+    if status == "Archived":
+        return ""
+    if summary_prepared:
+        return "mark_ready"
+    if status == "New":
+        return "mark_in_review"
+    if status == "In Review":
+        if not notes:
+            return "add_note"
+        if not is_summary_prepared(item, summary_prepared):
+            return "prepare_summary"
+        return "mark_ready"
+    if status == "Needs Follow-up":
+        return "add_note"
+    return ""
+
+
+def build_case_ai_workflow_trace(case, summary_prepared=False):
+    return [
+        {"label": "Data validation checked", "detail": f"Data quality: {case.get('data_quality', 'Not available')}."},
+        {
+            "label": "ML risk prediction generated",
+            "detail": f"AI risk: {case.get('ai_prediction_result', {}).get('ai_risk_level', 'Not available')} / {format_probability_percent(case.get('ai_prediction_result', {}).get('risk_probability'))}.",
+        },
+        {"label": "SIRS-style screening calculated", "detail": f"{case.get('sirs_screening', 'Not available')} ({case.get('sirs_criteria_met', 0)} of 4)."},
+        {"label": "Main model signals extracted", "detail": case.get("main_model_signal_text", "Not available")},
+        {
+            "label": "Similar cases retrieved if available",
+            "detail": "Available." if case.get("similar_cases_result", {}).get("available") else "Not available for this view.",
+        },
+        {
+            "label": "Cluster/anomaly context checked if available",
+            "detail": "Available." if case.get("cluster_result", {}).get("available") or case.get("anomaly_result", {}).get("available") else "Not available for this view.",
+        },
+        {
+            "label": "Uncertainty estimated if available",
+            "detail": case.get("uncertainty_result", {}).get("confidence_label", "Not available"),
+        },
+        {"label": "Coordinator action recommended", "detail": case.get("recommended_action", "Not available")},
+        {
+            "label": "Review summary prepared if available",
+            "detail": "Prepared." if summary_prepared else "Available after opening or creating a Review Ticket.",
+        },
+    ]
+
+
+def build_ticket_ai_workflow_trace(item, summary_prepared=False):
+    return [
+        {"label": "Data validation checked", "detail": f"Data quality: {item.get('data_quality') or 'Not available'}."},
+        {
+            "label": "ML risk prediction generated",
+            "detail": f"AI risk: {item.get('ai_risk_level') or 'Not available'} / {item.get('ai_probability_percent', 'Not available')}.",
+        },
+        {"label": "SIRS-style screening calculated", "detail": item.get("sirs_screening", "Not available")},
+        {"label": "Main model signals extracted", "detail": item.get("main_model_signal_text", "Not available")},
+        {"label": "Similar cases retrieved if available", "detail": "Open the Case Safety Profile for this optional context."},
+        {"label": "Cluster/anomaly context checked if available", "detail": "Open the Case Safety Profile for this optional context."},
+        {"label": "Uncertainty estimated if available", "detail": item.get("confidence_label", "Not available")},
+        {"label": "Coordinator action recommended", "detail": item.get("recommended_action", "Not available")},
+        {
+            "label": "Review summary prepared if available",
+            "detail": "Prepared." if is_summary_prepared(item, summary_prepared) else "Use Generate Review Summary when ready.",
+        },
+    ]
+
+
 def enrich_review_item(item):
     item = dict(item)
+    item["review_outcome"] = item.get("review_outcome", "")
     item["source_label"] = source_label(item.get("source_type"))
     if item.get("icustay_id"):
         item["case_display"] = f"ICU Case {item['icustay_id']}"
@@ -858,6 +1187,25 @@ def software_home():
 @app.route("/icu-dashboard")
 def icu_dashboard():
     return render_template("software_home.html", title="Dashboard", **build_dashboard_context())
+
+
+@app.route("/start-next-review")
+def start_next_review():
+    active_items = sorted(
+        enrich_review_items(list_review_items({"status": "__active__"})),
+        key=start_next_review_score,
+    )
+    if active_items:
+        return redirect(url_for("review_item_detail", item_id=active_items[0]["id"], started="1"))
+
+    try:
+        case_summaries = build_case_summaries()
+    except (FileNotFoundError, pd.errors.EmptyDataError):
+        case_summaries = []
+    if case_summaries:
+        top_case = sorted(case_summaries, key=start_next_review_score)[0]
+        return redirect(url_for("icu_case_detail", icustay_id=top_case["icustay_id"], start_next="create_ticket"))
+    return redirect(url_for("review_queue", start_next="empty"))
 
 
 @app.route("/icu-cases")
@@ -993,10 +1341,12 @@ def review_queue():
         filters=filters,
         statuses=WORKFLOW_STATUSES,
         priorities=WORKFLOW_PRIORITIES,
+        workflow_stats=get_workflow_stats(),
         coordinator_options=coordinator_options,
         audit_events=get_audit_events(limit=15),
         created=request.args.get("created"),
         existing_id=request.args.get("existing_id"),
+        start_next=request.args.get("start_next"),
     )
 
 
@@ -1008,23 +1358,46 @@ def review_item_detail(item_id):
     item = enrich_review_item(item)
     manual_case = get_manual_case(item["manual_case_id"]) if item.get("manual_case_id") else None
     measurement_rows = get_measurement_rows(manual_case) if manual_case else []
+    notes = get_review_notes(item_id)
+    prepared_review_summary = build_prepared_review_summary(item, notes)
+    summary_prepared = request.args.get("summary") == "prepared"
     return render_template(
         "review_item_detail.html",
         title="Review Ticket",
         item=item,
         manual_case=manual_case,
         measurement_rows=measurement_rows,
-        notes=get_review_notes(item_id),
+        notes=notes,
         audit_events=get_audit_events("review_item", item_id),
         statuses=WORKFLOW_STATUSES,
         priorities=WORKFLOW_PRIORITIES,
+        prepared_review_summary=prepared_review_summary,
+        ticket_ai_outputs=build_ticket_assistant_outputs(item, prepared_review_summary),
+        next_step_guidance=build_next_step_guidance(item, summary_prepared),
+        ticket_steps=build_ticket_stepper(item, notes, summary_prepared),
+        ticket_lifecycle=build_ticket_lifecycle(item),
+        primary_action=primary_ticket_action(item, notes, summary_prepared),
+        summary_prepared=summary_prepared,
+        review_outcomes=REVIEW_OUTCOMES,
+        ai_workflow_trace=build_ticket_ai_workflow_trace(item, summary_prepared),
+        ai_system_status=get_ai_system_status(),
+        started=request.args.get("started") == "1",
     )
 
 
 @app.route("/review-item/<int:item_id>/edit", methods=["POST"])
 def review_item_edit(item_id):
-    update_review_item(item_id, request.form.get("status", "New"), request.form.get("priority", "Low"), request.form.get("assigned_reviewer", ""))
-    return redirect(request.form.get("return_to") or url_for("review_item_detail", item_id=item_id))
+    status = request.form.get("status", "New")
+    review_outcome = normalize_review_outcome(request.form.get("review_outcome", ""))
+    update_review_item(
+        item_id,
+        status,
+        request.form.get("priority", "Low"),
+        request.form.get("assigned_reviewer", ""),
+        review_outcome,
+    )
+    destination = local_redirect_target(request.form.get("return_to"), url_for("review_item_detail", item_id=item_id))
+    return redirect(add_query_params(destination, msg=status_message_code(status)))
 
 
 @app.route("/review-item/<int:item_id>/quick-action", methods=["POST"])
@@ -1033,22 +1406,28 @@ def review_item_quick_action(item_id):
     if not item:
         return redirect(url_for("review_queue"))
     action = request.form.get("action", "")
+    message_code = "ticket_updated"
     if action == "archive":
         archive_review_item(item_id)
+        message_code = "ticket_archived"
     else:
         status_map = {
             "mark_in_review": "In Review",
             "mark_follow_up": "Needs Follow-up",
+            "mark_ready_quality_team": "Ready for Quality Team Review",
             "mark_reviewed": "Reviewed",
         }
         next_status = status_map.get(action, item.get("status", "New"))
+        message_code = status_message_code(next_status)
         update_review_item(
             item_id,
             next_status,
             item.get("priority", "Low"),
             item.get("assigned_reviewer", ""),
         )
-    return redirect(request.form.get("return_to") or url_for("review_item_detail", item_id=item_id))
+    fallback = url_for("review_queue") if action == "archive" else url_for("review_item_detail", item_id=item_id)
+    destination = local_redirect_target(request.form.get("return_to"), fallback)
+    return redirect(add_query_params(destination, msg=message_code))
 
 
 @app.route("/review-item/<int:item_id>/note", methods=["POST"])
@@ -1056,33 +1435,38 @@ def review_item_note(item_id):
     note_text = request.form.get("note_text", "").strip()
     if note_text:
         add_review_note(item_id, request.form.get("reviewer_name", ""), note_text)
-    return redirect(request.form.get("return_to") or url_for("review_item_detail", item_id=item_id))
+        message_code = "note_saved"
+    else:
+        message_code = "ticket_updated"
+    destination = local_redirect_target(request.form.get("return_to"), url_for("review_item_detail", item_id=item_id))
+    return redirect(add_query_params(destination, msg=message_code))
 
 
 @app.route("/review-item/<int:item_id>/archive", methods=["POST"])
 def review_item_archive(item_id):
     archive_review_item(item_id)
-    return redirect(url_for("review_queue"))
+    return redirect(url_for("review_queue", msg="ticket_archived"))
 
 
 @app.route("/review-item/<int:item_id>/delete", methods=["POST"])
 def review_item_delete(item_id):
     delete_review_item(item_id)
-    return redirect(url_for("review_queue"))
+    return redirect(url_for("review_queue", msg="ticket_archived"))
 
 
+MANUAL_RANGE_ERROR = "The value is outside the supported manual-entry range. Please check units or correct the entry."
 NUMERIC_CASE_FIELDS = [
-    ("age", "Age"),
-    ("heart_rate_avg", "Heart rate avg"),
-    ("heart_rate_max", "Heart rate max"),
-    ("systolic_bp_avg", "Systolic BP avg"),
-    ("respiratory_rate_avg", "Respiratory rate avg"),
-    ("temperature_avg", "Temperature avg"),
-    ("spo2_avg", "SpO2 avg"),
-    ("creatinine_max", "Creatinine max"),
-    ("glucose_max", "Glucose max"),
-    ("wbc_max", "WBC max"),
-    ("hemoglobin_min", "Hemoglobin min"),
+    ("age", "Age", 0, 120),
+    ("heart_rate_avg", "Heart rate avg", 20, 250),
+    ("heart_rate_max", "Heart rate max", 20, 300),
+    ("systolic_bp_avg", "Systolic BP avg", 40, 250),
+    ("respiratory_rate_avg", "Respiratory rate avg", 1, 80),
+    ("temperature_avg", "Temperature avg", 25, 45),
+    ("spo2_avg", "SpO2 avg", 0, 100),
+    ("creatinine_max", "Creatinine max", 0, 20),
+    ("glucose_max", "Glucose max", 10, 1000),
+    ("wbc_max", "WBC max", 0, 300),
+    ("hemoglobin_min", "Hemoglobin min", 1, 25),
 ]
 
 
@@ -1106,7 +1490,7 @@ def parse_manual_case_form(form):
     }
     errors = {}
 
-    for field, label in NUMERIC_CASE_FIELDS:
+    for field, label, minimum, maximum in NUMERIC_CASE_FIELDS:
         raw = form.get(field, "").strip()
         raw_values[field] = raw
         if not raw:
@@ -1116,6 +1500,9 @@ def parse_manual_case_form(form):
             values[field] = float(raw)
         except ValueError:
             errors[field] = f"{label} must be a valid number."
+            continue
+        if values[field] < minimum or values[field] > maximum:
+            errors[field] = f"{label}: {MANUAL_RANGE_ERROR}"
 
     return values, raw_values, errors
 
@@ -1286,6 +1673,7 @@ def icu_case_detail(icustay_id):
         back_to_worklist_url=back_to_worklist_url,
         ai_system_status=get_ai_system_status(),
         linked_review_item=linked_review_item,
+        ai_workflow_trace=build_case_ai_workflow_trace(case),
     )
 
 
@@ -1302,7 +1690,7 @@ def icu_case_ai_assistant(icustay_id):
     else:
         question = request.form.get("question", "")
 
-    if question.strip().lower() == "generate case summary":
+    if question.strip().lower() in {"generate case summary", "generate review summary"}:
         answer = generate_case_summary(
             case,
             case["ai_prediction_result"],
