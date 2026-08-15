@@ -89,27 +89,36 @@ falls back to an offline templated summary built from local model outputs.
 
 ## Run
 
-Clone or open this repository, then create a virtual environment named `.venv` in the project root.
+After downloading `Software_System.zip`, extract it and open a terminal in the `Software_System` folder.
 
-PowerShell:
+Windows:
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
 
-Git Bash:
+Mac/Linux:
 
 ```bash
-python -m venv .venv
-source .venv/Scripts/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
 
-Open `http://127.0.0.1:5000/`.
+Open `http://127.0.0.1:5000`.
+
+Launcher scripts are also included:
+
+```text
+run_windows.bat
+bash run_mac_linux.sh
+```
+
+The app uses the included processed file `data/patient_features_ai.csv`. Raw MIMIC files are not required for running the demo. The local SQLite review database is created automatically in the `data` folder. This app is an academic prototype for quality-review workflow only.
 
 ## Main Routes
 

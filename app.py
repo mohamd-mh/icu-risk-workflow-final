@@ -126,11 +126,15 @@ WORKFLOW_MESSAGES = {
     },
     "ticket_reviewed": {
         "level": "success",
-        "text": "Ticket marked as Reviewed. Archive when documentation is complete.",
+        "text": "Ticket marked as Reviewed. Review is complete. Archive the ticket when documentation is no longer active.",
     },
     "ticket_archived": {
         "level": "info",
         "text": "This ticket is archived and removed from the active Review Queue. It is kept for audit/history.",
+    },
+    "archive_requires_reviewed": {
+        "level": "warning",
+        "text": "Archive is a final closure action and is available only after the review workflow status is Reviewed.",
     },
     "ticket_updated": {
         "level": "success",
@@ -165,6 +169,16 @@ def status_message_code(status):
         "Reviewed": "ticket_reviewed",
         "Archived": "ticket_archived",
     }.get(status, "ticket_updated")
+
+
+def can_archive_review_item(item):
+    return bool(item and item.get("status") == "Reviewed")
+
+
+def editable_workflow_statuses(item):
+    if item.get("status") == "Archived":
+        return WORKFLOW_STATUSES
+    return [status for status in WORKFLOW_STATUSES if status != "Archived"]
 
 @app.context_processor
 def inject_navigation():
@@ -346,8 +360,8 @@ def build_recommended_action(
         return "This ticket is archived and removed from the active Review Queue. It is kept for audit/history."
     if status == "Ready for Quality Team Review":
         return "Ready for handoff. Keep the prepared summary, notes, and audit trail available for the Quality & Patient Safety Review Team."
-    if status in {"Reviewed", "Closed"}:
-        return "Review documentation appears complete. Archive if no further follow-up is needed."
+    if status == "Reviewed":
+        return "Review is complete. Archive the ticket when documentation is no longer active."
     if status == "Needs Follow-up":
         return "Needs follow-up documentation. Add a coordinator note and keep ownership assigned."
     if data_quality in {"Partial", "Poor"} or "missing" in (confidence_label or "").lower():
@@ -358,8 +372,6 @@ def build_recommended_action(
         return "Prioritize for review and mark In Review."
     if sirs_positive or priority == "Watch":
         return "Review SIRS screening context and document whether follow-up is needed."
-    if status in {"Closed"}:
-        return "Review can be archived if documentation is complete."
     return "Open the profile, review AI-assisted priority, and document the coordinator decision."
 
 
@@ -957,7 +969,7 @@ def build_next_step_guidance(item, summary_prepared=False):
     status = item.get("status")
     if status == "Ready for Quality Team Review":
         return "This ticket is prepared for the Quality & Patient Safety Review Team. After team review, mark it Reviewed or move it back to Needs Follow-up."
-    if status in {"Reviewed", "Closed"}:
+    if status == "Reviewed":
         return "Review is complete. Archive the ticket when documentation is no longer active."
     if status == "Archived":
         return "This ticket is archived and removed from the active Review Queue. It is kept for audit/history."
@@ -1017,7 +1029,7 @@ def primary_ticket_action(item, notes, summary_prepared=False):
     status = item.get("status")
     if status == "Ready for Quality Team Review":
         return "mark_reviewed"
-    if status in {"Reviewed", "Closed"}:
+    if status == "Reviewed":
         return "archive"
     if status == "Archived":
         return ""
@@ -1369,7 +1381,7 @@ def review_item_detail(item_id):
         measurement_rows=measurement_rows,
         notes=notes,
         audit_events=get_audit_events("review_item", item_id),
-        statuses=WORKFLOW_STATUSES,
+        statuses=editable_workflow_statuses(item),
         priorities=WORKFLOW_PRIORITIES,
         prepared_review_summary=prepared_review_summary,
         ticket_ai_outputs=build_ticket_assistant_outputs(item, prepared_review_summary),
@@ -1387,8 +1399,17 @@ def review_item_detail(item_id):
 
 @app.route("/review-item/<int:item_id>/edit", methods=["POST"])
 def review_item_edit(item_id):
+    item = get_review_item(item_id)
+    if not item:
+        return redirect(url_for("review_queue"))
     status = request.form.get("status", "New")
     review_outcome = normalize_review_outcome(request.form.get("review_outcome", ""))
+    destination = local_redirect_target(request.form.get("return_to"), url_for("review_item_detail", item_id=item_id))
+    if status == "Archived" and item.get("status") != "Archived":
+        if not can_archive_review_item(item):
+            return redirect(add_query_params(destination, msg="archive_requires_reviewed"))
+        archive_review_item(item_id)
+        return redirect(add_query_params(destination, msg="ticket_archived"))
     update_review_item(
         item_id,
         status,
@@ -1396,7 +1417,6 @@ def review_item_edit(item_id):
         request.form.get("assigned_reviewer", ""),
         review_outcome,
     )
-    destination = local_redirect_target(request.form.get("return_to"), url_for("review_item_detail", item_id=item_id))
     return redirect(add_query_params(destination, msg=status_message_code(status)))
 
 
@@ -1408,8 +1428,11 @@ def review_item_quick_action(item_id):
     action = request.form.get("action", "")
     message_code = "ticket_updated"
     if action == "archive":
-        archive_review_item(item_id)
-        message_code = "ticket_archived"
+        if can_archive_review_item(item):
+            archive_review_item(item_id)
+            message_code = "ticket_archived"
+        else:
+            message_code = "archive_requires_reviewed"
     else:
         status_map = {
             "mark_in_review": "In Review",
@@ -1425,7 +1448,7 @@ def review_item_quick_action(item_id):
             item.get("priority", "Low"),
             item.get("assigned_reviewer", ""),
         )
-    fallback = url_for("review_queue") if action == "archive" else url_for("review_item_detail", item_id=item_id)
+    fallback = url_for("review_queue") if action == "archive" and message_code == "ticket_archived" else url_for("review_item_detail", item_id=item_id)
     destination = local_redirect_target(request.form.get("return_to"), fallback)
     return redirect(add_query_params(destination, msg=message_code))
 
@@ -1444,12 +1467,22 @@ def review_item_note(item_id):
 
 @app.route("/review-item/<int:item_id>/archive", methods=["POST"])
 def review_item_archive(item_id):
+    item = get_review_item(item_id)
+    if not item:
+        return redirect(url_for("review_queue"))
+    if not can_archive_review_item(item):
+        return redirect(url_for("review_item_detail", item_id=item_id, msg="archive_requires_reviewed"))
     archive_review_item(item_id)
     return redirect(url_for("review_queue", msg="ticket_archived"))
 
 
 @app.route("/review-item/<int:item_id>/delete", methods=["POST"])
 def review_item_delete(item_id):
+    item = get_review_item(item_id)
+    if not item:
+        return redirect(url_for("review_queue"))
+    if not can_archive_review_item(item):
+        return redirect(url_for("review_item_detail", item_id=item_id, msg="archive_requires_reviewed"))
     delete_review_item(item_id)
     return redirect(url_for("review_queue", msg="ticket_archived"))
 

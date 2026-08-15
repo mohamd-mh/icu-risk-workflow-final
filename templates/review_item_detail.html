@@ -42,10 +42,14 @@
                 {% if item.status == 'Ready for Quality Team Review' %}
                     <button type="button" class="button-link secondary disabled-action" disabled>Already Ready</button>
                     <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><button type="submit" class="button-link">Mark Reviewed</button></form>
-                {% elif item.status in ['Reviewed', 'Closed'] %}
-                    <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link primary-danger danger-action">Archive</button></form>
+                    <button type="button" class="button-link secondary disabled-action" disabled>Archive after Reviewed</button>
+                {% elif item.status == 'Reviewed' %}
+                    <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket for final closure? It will be removed from the active worklist and kept for audit/history.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link primary-danger danger-action">Archive</button></form>
+                {% elif item.status == 'Closed' %}
+                    <button type="button" class="button-link secondary disabled-action" disabled>Archive after Reviewed</button>
                 {% else %}
                     <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_ready_quality_team"><button type="submit" class="{% if primary_action == 'mark_ready' %}button-link{% else %}button-link secondary{% endif %}">Mark Ready for Quality Team Review</button></form>
+                    <button type="button" class="button-link secondary disabled-action" disabled>Archive after Reviewed</button>
                 {% endif %}
             {% else %}
                 <span class="workflow-state-note">Archived for audit/history.</span>
@@ -109,17 +113,21 @@
                 <button type="button" class="button-link secondary disabled-action" disabled>Already Ready</button>
                 <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_reviewed"><button type="submit" class="button-link">Mark Reviewed</button></form>
                 <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_follow_up"><button type="submit" class="button-link secondary">Mark Needs Follow-up</button></form>
-                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link secondary danger-action">Archive</button></form>
-            {% elif item.status in ['Reviewed', 'Closed'] %}
+                <button type="button" class="button-link secondary disabled-action" disabled>Archive after Reviewed</button>
+            {% elif item.status == 'Reviewed' %}
                 <a class="button-link secondary" href="#note">Add Coordinator Note</a>
                 <a class="button-link secondary" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
-                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link primary-danger danger-action">Archive</button></form>
+                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket for final closure? It will be removed from the active worklist and kept for audit/history.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link primary-danger danger-action">Archive</button></form>
+            {% elif item.status == 'Closed' %}
+                <a class="button-link secondary" href="#note">Add Coordinator Note</a>
+                <a class="button-link secondary" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
+                <button type="button" class="button-link secondary disabled-action" disabled>Archive after Reviewed</button>
             {% else %}
                 {% if item.status == 'New' %}<form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_in_review"><button type="submit" class="{% if primary_action == 'mark_in_review' %}button-link{% else %}button-link secondary{% endif %}">Mark In Review</button></form>{% endif %}
                 <a class="button-link {% if primary_action != 'add_note' %}secondary{% endif %}" href="#note">Add Coordinator Note</a>
                 <a class="button-link {% if primary_action != 'prepare_summary' %}secondary{% endif %}" href="{{ url_for('review_item_detail', item_id=item.id, summary='prepared', msg='summary_prepared') }}#prepared-summary">Generate Review Summary</a>
                 <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form"><input type="hidden" name="action" value="mark_ready_quality_team"><button type="submit" class="{% if primary_action == 'mark_ready' %}button-link{% else %}button-link secondary{% endif %}">Mark Ready for Quality Team Review</button></form>
-                <form method="post" action="{{ url_for('review_item_quick_action', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Archive this ticket? It will be removed from the active Review Queue.');"><input type="hidden" name="action" value="archive"><button type="submit" class="button-link secondary danger-action">Archive</button></form>
+                <button type="button" class="button-link secondary disabled-action" disabled>Archive after Reviewed</button>
             {% endif %}
         </div>
     </section>
